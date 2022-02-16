@@ -1,5 +1,5 @@
 class Server:
-    def __init__(self, name, func, *attrs):
+    def __init__(self, name, func, **attrs):
         self.name = name
         self.func = func
         self.attrs = attrs
@@ -8,4 +8,11 @@ class Server:
 
     def attend_client(self, client):
         self.in_use = True
-        return self.func(client, *self.attrs)
+        return self.func(self, client)
+
+    @staticmethod
+    def ghost():
+        return Server("ghost", lambda s, c: None)
+
+    def __lt__(self, other):
+        return self.name < other.name
