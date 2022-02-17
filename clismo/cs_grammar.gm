@@ -1,352 +1,148 @@
-# NumLab Programming Language grammar.
-program:
-	| stmt program
-	| NEWLINE program
-	| EPS
+# # NumLab Programming Language grammar.
 
-stmt: simple_stmt
-	| compound_stmt
+program:
+    | obj_def program
+    | NEWLINE program
+    | EPS
+
+obj_def:
+    | client_def
+    | server_def
+    | step_def
+    | sim_def
+
+client_def:
+    | 'client' NAME ':' obj_def_body
+
+server_def:
+    | 'server' NAME ':' obj_def_body
+
+step_def:
+    | 'step' NAME ':' obj_def_body
+
+sim_def:
+    | 'simulation' NAME ':' obj_def_body
+
+obj_def_body: NEWLINE INDENT obj_stmt_list DEDENT
+
+obj_stmt_list:
+    | obj_stmt obj_stmt_list
+    | NEWLINE obj_stmt_list
+    | EPS
+
+obj_stmt:
+    | NAME '=' test
+    | func_def
+
+suite: NEWLINE INDENT stmt_list DEDENT
+
+func_def:
+    | NAME '(' name_list ')' ':' suite
+
+name_list:
+    | NAME name_list
+    | EPS
 
 stmt_list:
-    | stmt
-	| stmt stmt_list
+    | stmt stmt_list
+    | NEWLINE stmt_list
+    | EPS
 
-simple_stmt:
-	| small_stmt NEWLINE
+stmt: decl_stmt
+    | assign_stmt
+    | if_stmt
+    | loop_stmt
+    | return_stmt
+    | flow_stmt
 
-funcdef:
-	| 'def' NAME '(' ')' ':' suite
-	| 'def' NAME '(' parameters ')' ':' suite
+decl_stmt: 'var' NAME '=' test
 
-classdef:
-	| 'class' NAME ':' suite
-	| 'class' NAME '(' ')' ':' suite
-	| 'class' NAME '(' arglist ')' ':' suite
-
-parameters:
-	| param
-	| param ',' parameters
-
-param:
-	| tfpdef
-	| tfpdef '=' test
-    | '*' tfpdef
-	| '**' tfpdef
-
-tfpdef: NAME | NAME ':' test
-
-varargslist:
-	| vfpdef
-	| vfpdef ',' varargslist
-
-vararg:
-    | vfpdef
-	| vfpdef '=' test
-	| '*' vfpdef
-	| '**' vfpdef
-
-vfpdef: NAME
-
-small_stmt:
-	| expr_stmt
-	| del_stmt
-	| pass_stmt
-	| flow_stmt
-	| global_stmt
-	| nonlocal_stmt
-	| assert_stmt
-	| sim_stmt
-	| stat_stmt
-
-sim_stmt:
-	| 'begsim' test
-	| 'endsim'
-
-stat_stmt:
-    | 'resetstats'
-
-del_stmt: 'del' expr_list
-
-pass_stmt: 'pass'
-
-global_stmt: 'global' namelist
-
-nonlocal_stmt: 'nonlocal' namelist
-
-assert_stmt: 'assert' test_list
-
-namelist:
-	| NAME
-	| NAME ',' namelist
-
-flow_stmt:
-	| break_stmt
-	| continue_stmt
-	| return_stmt
-	| raise_stmt
-	| yield_stmt
-
-break_stmt: 'break'
-
-continue_stmt: 'continue'
-
-return_stmt:
-	| 'return'
-	| 'return' test_list
-
-yield_stmt:
-	| 'yield'
-	| 'yield' expr_list
-
-raise_stmt:
-	| 'raise'
-	| 'raise' test
-	| 'raise' test 'from' test
-
-compound_stmt:
-	| if_stmt
-	| while_stmt
-	| for_stmt
-	| try_stmt
-	| with_stmt
-	| funcdef
-	| classdef
-	| decorated
-	| confdef
-	| cli_serv_model
-
-cli_serv_model:
-    | 'server' NAME ':' NEWLINE INDENT confbody DEDENT
-	| 'servmod' NAME ':' NEWLINE INDENT confbody DEDENT
-	| 'modopt' NAME ':' NEWLINE INDENT confbody DEDENT
-
-confdef:
-    | 'conf' NAME ':' NEWLINE INDENT confbody DEDENT
-	| 'conf' NAME '(' NAME ')' ':' NEWLINE INDENT confbody DEDENT
-
-confbody:
-	| NAME test NEWLINE
-	| NAME test NEWLINE confbody
+assign_stmt: NAME '=' test
 
 if_stmt:
-	| 'if' test ':' suite elif_clause
-	| 'if' test ':' suite elif_clause 'else' ':' suite
+    | 'if' test ':' suite
+    | 'if' test ':' suite 'else' ':' suite
 
-elif_clause:
-	| 'elif' test ':' suite elif_clause
-	| EPS
+loop_stmt:
+    | 'loop' ':' suite
+    | 'loop' NAME ':' suite
+    | 'loop' NAME 'from' test ':' suite
+    | 'loop' NAME 'from' test 'to' test ':' suite
+    | 'loop' NAME 'from' test 'to' test 'by' test ':' suite
 
-while_stmt:
-	| 'while' test ':' suite
-	| 'while' test ':' suite 'else' ':' suite
+flow_stmt:
+    | 'endloop'
+    | 'nextloop'
 
-for_stmt:
-	| 'for' expr_list 'in' test_list ':' suite
-	| 'for' expr_list 'in' test_list ':' suite 'else' ':' suite
-
-try_stmt:
-	| 'try' ':' suite except_clause 
-	| 'try' ':' suite except_clause 'else' ':' suite
-	| 'try' ':' suite except_clause 'finally' ':' suite
-	| 'try' ':' suite except_clause 'else' ':' suite 'finally' ':' suite
-
-except_clause:
-	| 'except' ':' suite maybe_except_clause
-	| 'except' test ':' suite maybe_except_clause
-	| 'except' test 'as' NAME ':' suite maybe_except_clause
-
-maybe_except_clause:
-	| except_clause
-	| EPS
-
-with_stmt:
-	| 'with' with_items ':' suite
-
-with_items:
-	| with_item
-	| with_item ',' with_items
-
-with_item:
-	| test
-	| test 'as' expr
-
-suite:
-	| simple_stmt
-	| NEWLINE INDENT stmt_list DEDENT
-
-decorated:
-	| decorators funcdef
-	| decorators classdef
-
-decorators:
-  	| decorator
-	| decorator decorators
-
-decorator:
-	| '@' dotted_name NEWLINE
-	| '@' dotted_name '(' ')' NEWLINE
-	| '@' dotted_name '(' arglist ')' NEWLINE
-
-dotted_name: NAME | NAME '.' dotted_name
-
-arglist:
-	| argument
-	| argument ',' arglist
-
-argument:
-	| test
-	| test comp_for
-	| test '=' test
-	| '*' test
-	| '**' test
-
-comp_for: 'for' expr_list 'in' or_test comp_iter
-
-comp_if: 'if' test_nocond comp_iter
-
-comp_iter:
-	| comp_for
-	| comp_if
-	| EPS
-
-expr_stmt:
-	| test_list annassign
-	| test_list augassign yield_or_testlist
-	| test_list assign
-
-yield_or_testlist:
-	| yield_expr
-	| test_list
-
-yield_expr: 'yield' | 'yield' yield_arg
-
-yield_arg: 'from' test | test_list
-
-assign:
-    | '=' yield_expr assign
-    | '=' test_list assign
-	| EPS
-
-annassign: ':' test '=' test
-
-augassign: '+='	| '-=' | '*=' | '@=' | '/='	| '%=' | '&=' | '|=' | '^='
-	| '<<=' | '>>=' | '**=' | '//='
+return_stmt: 'return' test
 
 test: or_test
-	| or_test 'if' or_test 'else' test
-	| lambdef
-
-test_nocond:
-	| or_test
-	| lambdef_nocond
-
-lambdef:
-	| 'lambda' ':' test
-	| 'lambda' varargslist ':' test
-
-lambdef_nocond:
-	| 'lambda' ':' test_nocond
-	| 'lambda' varargslist ':' test_nocond
 
 or_test:
-	| and_test
-	| and_test 'or' or_test
+    | and_test
+    | and_test 'or' or_test
 
 and_test:
-	| not_test
-	| not_test 'and' and_test
+    | not_test
+    | not_test 'and' and_test
 
 not_test:
-	| 'not' not_test
-	| comparison
-
+    | 'not' not_test
+    | comparison
+   
 comparison:
-	| expr
-	| expr comp_op comparison
+    | expr
+    | expr comp_op comparison
 
-comp_op: '<' | '>' | '==' | '>=' | '<=' | '!=' | 'in' | 'not' 'in' | 'is' | 'is' 'not'
+comp_op: '<' | '>' | '==' | '>=' | '<=' | '!='
 
 expr: xor_expr
-	| xor_expr '|' expr
+    | xor_expr '|' expr
 
 xor_expr:
-	| and_expr
-	| and_expr '^' xor_expr
+    | and_expr
+    | and_expr '^' xor_expr
 
 and_expr:
-	| shift_expr
-	| shift_expr '&' and_expr
+    | shift_expr
+    | shift_expr '&' and_expr
 
 shift_expr:
-	| arith_expr
-	| arith_expr '<<' shift_expr
-	| arith_expr '>>' shift_expr
+    | arith_expr
+    | arith_expr '<<' shift_expr
+    | arith_expr '>>' shift_expr
 
 arith_expr:
-	| term
-	| term '+' arith_expr
-	| term '-' arith_expr
+    | term
+    | term '+' arith_expr
+    | term '-' arith_expr
 
 term:
-	| factor
-	| factor '*' term
-	| factor '@' term
-	| factor '/' term
-	| factor '%' term
-	| factor '//' term
+    | factor
+    | factor '*' term
+    | factor '/' term
+    | factor '%' term
+    | factor '//' term
 
 factor:
-	| '+' factor
-	| '-' factor
-	| '~' factor
-	| power
+    | '+' factor
+    | '-' factor
+    | '~' factor
+    | power
 
 power:
-	| atom_expr
-	| atom_expr '**' factor
+    | atom
+    | atom '**' factor
 
-atom_expr:
-    | atom trailer_expr
+atom: '[' test_list ']' | '[' ']'
+    | NAME | NUMBER | STRING
+    | 'None' | 'True' | 'False'
+    | call
 
-trailer_expr:
-	| trailer trailer_expr
-	| EPS
-
-trailer:
-	| '(' ')'
-	| '(' arglist ')'
-	| '[' subscriptlist ']'
-	| '.' NAME
-
-subscriptlist:
-	| subscript
-	| subscript ',' subscriptlist
-
-subscript:
-    | test
-	| maybe_test ':' maybe_test sliceop
-
-sliceop: ':' maybe_test | EPS
-
-maybe_test:
-	| test
-	| EPS
-
-atom: '(' test_list_comp ')'
-	| '[' test_list_comp ']'
-	# | '{' dictorsetmaker '}'  TODO: implement
-	| '(' ')' | '[' ']' | '{' '}'
-	| NAME | NUMBER	| STRING
-	| 'None' | 'True' | 'False'
-
-test_list_comp:
-	| test comp_for
-	| test_list
-
-expr_list:
-	| expr
-	| expr ',' expr_list
+call:
+    | NAME '(' ')'
+    | NAME '(' test_list ')'
 
 test_list:
-	| test
-	| test ',' test_list
+    | test
+    | test ',' test_list
