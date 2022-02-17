@@ -1,8 +1,11 @@
 from random import choice
 
+from clismo.sim.optimizable_obj import OptimizableObject
 
-class Step:
-    def __init__(self, name, servers = None):
+
+class Step(OptimizableObject):
+    def __init__(self, name, servers=None):
+        super().__init__("servers")
         self.name = name
         self.servers = servers or []
         self.clients_queue = []

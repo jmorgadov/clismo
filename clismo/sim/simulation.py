@@ -1,11 +1,14 @@
 from queue import PriorityQueue
 
+from clismo.sim.optimizable_obj import OptimizableObject
 from clismo.sim.server import Server
 
 
-class Simulation:
-    def __init__(self, arrival_func, steps, time_limit=None, client_limit=None):
-        self.arrival_func = arrival_func
+class Simulation(OptimizableObject):
+    def __init__(self, steps, time_limit=None, client_limit=None):
+        super().__init__("steps", "client_types")
+        self.arrival_funcs = []
+        self.client_types = []
         self.steps = steps
         self.time = 0
         self.clients = 0
@@ -14,18 +17,32 @@ class Simulation:
             raise ValueError("Either time_limit or client_limit must be specified")
         self.time_limit = time_limit
         self.client_limit = client_limit
+        self.minimize_func = None
+
+    def add_arrival_func(self, arrival_func, client):
+        self.arrival_funcs.append((arrival_func, client))
+        self.client_types.append(client)
+
+    def __run_arrivals(self):
+        for arrival_func, client_type in self.arrival_funcs:
+            delta_time = arrival_func()
+            client = client_type.get()
+            self.events.put(
+                (self.time + delta_time, delta_time, client, Server.ghost(), 0)
+            )
 
     def run(self):
+        if not self.arrival_funcs:
+            raise ValueError("No arrival functions specified")
         self.time = 0
         self.clients = 0
         self.events = PriorityQueue()
+        for step in self.steps:
+            for i, server in enumerate(step.servers):
+                step.servers[i] = server.get()
         while True:
             if self.events.empty():
-                delta_time, client_type = self.arrival_func()
-                client = client_type.get()
-                self.events.put(
-                    (self.time + delta_time, delta_time, client, Server.ghost(), 0)
-                )
+                self.__run_arrivals()
             time, delta_time, client, last_server, step = self.events.get()
             if step < len(self.steps):
                 print(
@@ -53,11 +70,7 @@ class Simulation:
                     break
                 continue
             if step == 0:
-                delta_time, client_type = self.arrival_func()
-                client = client_type.get()
-                self.events.put(
-                    (self.time + delta_time, delta_time, client, Server.ghost(), 0)
-                )
+                self.__run_arrivals()
             event_time, server = self.steps[step].receive_client(client)
             if event_time is not None:
                 self.events.put(

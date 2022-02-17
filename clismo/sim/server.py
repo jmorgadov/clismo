@@ -1,9 +1,12 @@
-class Server:
+from clismo.sim.optimizable_obj import OptimizableObject
+
+
+class Server(OptimizableObject):
     def __init__(self, name, func, **attrs):
+        super().__init__()
         self.name = name
         self.func = func
         self.attrs = attrs
-        self.total_clients = 0
         self.in_use = False
 
     def attend_client(self, client):
@@ -16,3 +19,12 @@ class Server:
 
     def __lt__(self, other):
         return self.name < other.name
+
+    def get(self):
+        return Server(self.name, self.func, **self.attrs)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name

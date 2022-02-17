@@ -1,5 +1,9 @@
-class Client:
+from clismo.sim.optimizable_obj import OptimizableObject
+
+
+class Client(OptimizableObject):
     def __init__(self, name, **attrs):
+        super().__init__()
         self.name = name
         self.attrs = attrs
         self.on_server_out_funcs = {}

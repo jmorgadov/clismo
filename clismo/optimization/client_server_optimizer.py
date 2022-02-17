@@ -1,87 +1,70 @@
-# import random
-# from contextlib import redirect_stdout
-# from time import time
+import random
+from contextlib import redirect_stdout
+from time import time
 
-# #import clismo.nl_ast as ast
-# from clismo.ia.genetic_alg import GeneticAlg
-# from clismo.lang.context import Context
-# #rom clismo.visitors.eval_visitor import EvalVisitor
-# #rom clismo.visitors.opt_visitor import OptVisitor
+from clismo.ia.genetic_alg import GeneticAlg
+from clismo.sim.simulation import Simulation
 
 
-# class CodeOptimizer(GeneticAlg):
-#     """
-#     Genetic algorithm for optimizing the code
-#     """
+class ModelOptimizer(GeneticAlg):
+    """
+    Genetic algorithm for optimizing the code
+    """
 
-#     def __init__(
-#         self,
-#         #ast: ast.AST,
-#         possible_changes: list,
-#         max_iter: int = 5,
-#         minimize=True,
-#         population_size=10,
-#         mutation_prob=0.1,
-#         best_selection_count=3,
-#         generate_new_randoms=2,
-#     ):
-#         self.ast = ast
-#         opt = OptVisitor()
-#         opt.check(self.ast)
-#         self.possible_changes = opt.changes
-#         self.last_vector = [0] * len(possible_changes)
-#         super().__init__(
-#             max_iter,
-#             minimize,
-#             population_size,
-#             mutation_prob,
-#             best_selection_count,
-#             generate_new_randoms,
-#         )
+    def __init__(
+        self,
+        model: Simulation,
+        max_iter: int = 5,
+        minimize=True,
+        population_size=10,
+        mutation_prob=0.1,
+        best_selection_count=3,
+        generate_new_randoms=2,
+    ):
+        self.model = model
+        self.changes = model.get_possible_changes()
+        super().__init__(
+            max_iter,
+            minimize,
+            population_size,
+            mutation_prob,
+            best_selection_count,
+            generate_new_randoms,
+        )
 
-#     def eval(self, solution) -> float:
-#         """
-#         Evaluate the fitness of the solution
-#         """
-#         for i, item in enumerate(solution):
-#             if self.last_vector[i] != item:
-#                 node, change_func, revert_func = self.possible_changes[i]
-#                 func = change_func if item else revert_func
-#                 func(node)
+    def _apply_solution(self, sol):
+        """
+        Apply a solution to the model
+        """
+        for obj, attr_name, value in sol:
+            setattr(obj, attr_name, value)
 
-#         evaluator = EvalVisitor(Context())
-#         start = time()
-#         try:
-#             with open("logs.txt", "w+") as f:
-#                 with redirect_stdout(f):
-#                     evaluator.eval(self.ast)
-#         except Exception as e:
-#             if isinstance(e, KeyboardInterrupt):
-#                 raise e
-#             self.last_vector = solution
-#             return float("inf") if self.minimize else 0
-#         end = time()
-#         self.last_vector = solution
-#         return end - start
+    def eval(self, solution) -> float:
+        """
+        Evaluate the fitness of the solution
+        """
+        self._apply_solution(solution)
+        self.model.run()
+        return self.model.minimize_func()
 
-#     def get_random_solution(self):
-#         """
-#         Generate a random solution
-#         """
-#         vals = [random.randint(0, 1) for _ in range(len(self.possible_changes))]
-#         return vals
+    def get_random_solution(self):
+        """
+        Generate a random solution
+        """
+        return [(obj, attr_name, func()) for obj, attr_name, func in self.changes]
 
-#     def crossover(self, sol1, sol2):
-#         """
-#         Crossover two solutions
-#         """
-#         idx = random.randint(0, len(self.possible_changes) - 1)
-#         return sol1[:idx] + sol2[idx:], sol2[:idx] + sol1[idx:]
+    def crossover(self, sol1, sol2):
+        """
+        Crossover two solutions
+        """
+        idx = random.randint(0, len(sol1) - 1)
+        return sol1[:idx] + sol2[idx:], sol2[:idx] + sol1[idx:]
 
-#     def mutate(self, sol):
-#         """
-#         Mutate a solution
-#         """
-#         idx = random.randint(0, len(self.possible_changes) - 1)
-#         sol[idx] = 1 - sol[idx]
-#         return sol
+    def mutate(self, sol):
+        """
+        Mutate a solution
+        """
+        idx = random.randint(0, len(sol) - 1)
+        obj, attr_name, func = self.changes[idx]
+        sol[idx] = (obj, attr_name, func())
+        return sol

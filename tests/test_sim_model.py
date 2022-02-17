@@ -49,13 +49,13 @@ def test_simple_simulation():
     s2 = Server(name="s2", func=lambda self, cli: 1)
     step = Step(name="step 1", servers=[s1, s2])
 
-    arrival_func = lambda: (1, client)
+    arrival_func = lambda: 1
 
     sim = Simulation(
-        arrival_func=arrival_func,
         steps=[step],
         client_limit=10,
     )
+    sim.add_arrival_func(arrival_func, client)
     assert sim.steps == [step]
 
     sim.run()
