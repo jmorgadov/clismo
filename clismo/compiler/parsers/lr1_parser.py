@@ -3,14 +3,14 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple, Union
 
-from numlab.compiler.generic_ast import AST
-from numlab.compiler.grammar import (Grammar, NonTerminal, Production, Symbol,
+from clismo.compiler.generic_ast import AST
+from clismo.compiler.grammar import (Grammar, NonTerminal, Production, Symbol,
                                      Terminal)
-from numlab.compiler.grammar_ops import calculate_first, calculate_follow
-from numlab.compiler.parsers.lritem import LRItem
-from numlab.compiler.parsers.parser import Parser
-from numlab.compiler.tokenizer import Token
-from numlab.exceptions import ParsingError
+from clismo.compiler.grammar_ops import calculate_first, calculate_follow
+from clismo.compiler.parsers.lritem import LRItem
+from clismo.compiler.parsers.parser import Parser
+from clismo.compiler.tokenizer import Token
+from clismo.exceptions import ParsingError
 
 
 class LR1Table:

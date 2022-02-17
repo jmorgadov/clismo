@@ -1,3 +1,3 @@
-from numlab.automata.state import State
-from numlab.automata.transition import Transition
-from numlab.automata.automata import Automata
+from clismo.automata.state import State
+from clismo.automata.transition import Transition
+from clismo.automata.automata import Automata

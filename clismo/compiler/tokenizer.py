@@ -19,8 +19,8 @@ Example of use:
 
 from typing import Any, Callable, Dict, List, Union, Tuple
 
-from numlab.exceptions import TokenizationError
-from numlab.nlre import RegexPattern, compile_patt
+from clismo.exceptions import TokenizationError
+from clismo.csre import RegexPattern, compile_patt
 
 
 class Token:

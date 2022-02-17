@@ -6,8 +6,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Iterable, List, Set, Tuple, Union
 
-from numlab.automata.state import State
-from numlab.automata.transition import Transition
+from clismo.automata.state import State
+from clismo.automata.transition import Transition
 
 _ATMT_COUNT = 0
 

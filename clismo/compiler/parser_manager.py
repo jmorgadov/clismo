@@ -6,11 +6,11 @@ from __future__ import annotations
 
 from typing import List
 
-from numlab.compiler.generic_ast import AST
-from numlab.compiler.grammar import Grammar
-from numlab.compiler.parsers.lr1_parser import LR1Parser
-from numlab.compiler.parsers.parser import Parser
-from numlab.compiler.tokenizer import Token, Tokenizer
+from clismo.compiler.generic_ast import AST
+from clismo.compiler.grammar import Grammar
+from clismo.compiler.parsers.lr1_parser import LR1Parser
+from clismo.compiler.parsers.parser import Parser
+from clismo.compiler.tokenizer import Token, Tokenizer
 
 
 class ParserManager:

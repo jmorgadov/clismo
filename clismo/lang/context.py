@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from numlab.lang.type import Instance, Type
+from clismo.lang.type import Instance, Type
 
 
 class Context:

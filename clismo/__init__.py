@@ -1,6 +1,6 @@
 import logging
 
-import numlab.nlre
+import clismo.csre
 
 logging.basicConfig(
     level=logging.WARNING,
@@ -8,6 +8,6 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 
-__all__ = ["nlre"]
+__all__ = ["csre"]
 
 __version__ = "0.2.0"

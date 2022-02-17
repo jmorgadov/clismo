@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from numlab.compiler import Grammar
+from clismo.compiler import Grammar
 
 
 def test_grammar_parser():

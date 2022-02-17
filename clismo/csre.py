@@ -15,7 +15,7 @@ Exmaple:
 
 import logging
 
-from numlab.automata import Automata
+from clismo.automata import Automata
 
 ASCII = list(map(chr, range(128)))
 SPECIAL_CHARS = ["(", ")", "|", "*", "^"]

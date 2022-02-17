@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import Set
 
-from numlab.compiler.grammar import Terminal
-from numlab.compiler.tokenizer import Token
+from clismo.compiler.grammar import Terminal
+from clismo.compiler.tokenizer import Token
 
 
 class TerminalSet:

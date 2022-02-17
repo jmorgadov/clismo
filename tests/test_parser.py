@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import List
 
 import pytest
-from numlab.compiler import (AST, Grammar, LR1Parser, ParserManager, Symbol,
+from clismo.compiler import (AST, Grammar, LR1Parser, ParserManager, Symbol,
                              Tokenizer)
-from numlab.exceptions import ParsingError
+from clismo.exceptions import ParsingError
 
 
 # Math ast

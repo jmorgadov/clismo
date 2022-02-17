@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, List
 
-from numlab.automata.transition import Transition
+from clismo.automata.transition import Transition
 
 
 class State:

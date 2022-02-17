@@ -1,4 +1,4 @@
-from numlab.compiler.grammar import NonTerminal, Production, Symbol
+from clismo.compiler.grammar import NonTerminal, Production, Symbol
 
 
 class LRItem:

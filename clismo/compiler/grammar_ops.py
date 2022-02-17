@@ -1,7 +1,7 @@
 from typing import Dict, List
 
-from numlab.compiler.grammar import Grammar, Terminal
-from numlab.compiler.terminal_set import TerminalSet
+from clismo.compiler.grammar import Grammar, Terminal
+from clismo.compiler.terminal_set import TerminalSet
 
 
 def calculate_first(gm: Grammar) -> Dict[str, TerminalSet]:

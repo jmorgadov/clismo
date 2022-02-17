@@ -1,9 +1,9 @@
 import abc
 from typing import List
 
-from numlab.compiler.generic_ast import AST
-from numlab.compiler.grammar import Grammar
-from numlab.compiler.tokenizer import Token
+from clismo.compiler.generic_ast import AST
+from clismo.compiler.grammar import Grammar
+from clismo.compiler.tokenizer import Token
 
 
 class Parser(metaclass=abc.ABCMeta):

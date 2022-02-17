@@ -2,8 +2,8 @@ import logging
 import re
 
 import pytest
-from numlab.compiler import Tokenizer
-from numlab.exceptions import TokenizationError
+from clismo.compiler import Tokenizer
+from clismo.exceptions import TokenizationError
 
 
 @pytest.fixture
