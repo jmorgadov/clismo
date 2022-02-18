@@ -32,19 +32,27 @@ def resolve(func_name):
 
 @builtin_func("abs", cs_float)
 def cs_abs(x: cs_float):
-    return cs_float(builtins.abs(x.get("value")))
+    if x.type.subtype(cs_float):
+        return cs_float(builtins.abs(x.get("value")))
+    #raise
 
 
 @builtin_func("bin", cs_str)
 def cs_bin(x: cs_int):
-    return cs_str(builtins.bin(x.get("value")))
+    if x.type.subtype(cs_int):
+        return cs_str(builtins.bin(x.get("value")))
+    #raise
 
 
 @builtin_func("round", cs_float)
 def cs_round(x, ndigits=None):
-    if ndigits is None:
-        return cs_float(builtins.round(x.get("value")))
-    return cs_float(builtins.round(x.get("value"), ndigits.get("value")))
+    if x.type.subtype(cs_float):
+        if ndigits is None:
+            return cs_float(builtins.round(x.get("value")))
+        if ndigits.type.subtype(cs_int):
+            return cs_float(builtins.round(x.get("value"), ndigits.get("value")))
+        #raise
+    #raise
 
 
 @builtin_func("rand", cs_float)
@@ -54,7 +62,9 @@ def cs_rand():
 
 @builtin_func("randint", cs_str)
 def cs_randint(a, b):
-    return cs_int(random.randint(a.get("value"), b.get("value")))
+    if a.type.subtype(cs_float) and b.type.subtype(cs_int):
+        return cs_int(random.randint(a.get("value"), b.get("value")))
+    #raise
 
 
 @builtin_func("norm", cs_float)
@@ -64,52 +74,74 @@ def cs_norm():
 
 @builtin_func("sqrt", cs_float)
 def cs_sqrt(x):
-    return cs_float(math.sqrt(x.get("value")))
+    if x.type.subtype(cs_float):
+        return cs_float(math.sqrt(x.get("value")))
+    #raise
 
 
 @builtin_func("sleep", cs_float)
 def cs_sleep(x: cs_float):
-    return cs_float(sleep(x))
+    if x.type.subtype(cs_float):
+        return cs_float(sleep(x))
+    #raise
 
 
 @builtin_func("log", cs_float)
 def log(x, base):
-    return cs_float(math.log(x.get("value"), base.get("value")))
+    if x.type.subtype(cs_float):
+        if base.type.subtype(cs_int):
+            return cs_float(math.log(x.get("value"), base.get("value")))
+        #raise
+    #raise
 
 
 @builtin_func("log2", cs_float)
 def log2(x):
-    return cs_float(math.log2(x.get("value")))
+    if x.type.subtype(cs_float):
+        return cs_float(math.log2(x.get("value")))
+    #raise
 
 
 @builtin_func("exp", cs_float)
 def exp(x):
-    return cs_float(math.exp(x.get("value")))
+    if x.type.subtype(cs_float):
+        return cs_float(math.exp(x.get("value")))
+    #raise
 
 
 @builtin_func("ceil", cs_int)
 def ceil(x):
-    return cs_int(math.ceil(x.get("value")))
+    if x.type.subtype(cs_int):
+        return cs_int(math.ceil(x.get("value")))
+    #raise
 
 
 @builtin_func("floor", cs_int)
 def floor(x):
-    return cs_int(math.floor(x.get("value")))
+    if x.type.subtype(cs_int):
+        return cs_int(math.floor(x.get("value")))
+    #raise
 
 
 @builtin_func("sin", cs_float)
 def sin(x):
-    return cs_float(math.sin(x.get("value")))
+    if x.type.subtype(cs_float):
+        return cs_float(math.sin(x.get("value")))
+    #raise
 
 
 @builtin_func("cos", cs_float)
 def cos(x):
-    return cs_float(math.cos(x.get("value")))
+    if x.type.subtype(cs_float):
+        return cs_float(math.cos(x.get("value")))
+    #raise
 
 
 @builtin_func("tan", cs_float)
 def tan(x):
-    return cs_float(math.tan(x.get("value")))
+    if x.type.subtype(cs_float):
+        return cs_float(math.tan(x.get("value")))
+    #raise
 
 
 #endregion
@@ -122,6 +154,7 @@ def tan(x):
 def cs_len(x):
     if x.type.subtype(cs_list):
         return len(x.get('value'))
+    #raise
     
 
 
@@ -130,6 +163,8 @@ def cs_get_at(x, index):
     if x.type.subtype(cs_list):
         if index.type.subtype(cs_int):
             return x.get('value')[index.get('value')]
+        #raise
+    #raise
 
 
 
@@ -138,6 +173,8 @@ def cs_set_at(x, index, obj):
     if x.type.subtype(cs_list):
         if index.type.subtype(cs_int):
             x.get('value')[index.get('value')] = obj.get('value')
+        #raise
+    #raise
 
 
 #endregion
