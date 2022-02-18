@@ -2,12 +2,12 @@ import operator
 
 import clismo.builtin as builtin
 import clismo.cs_ast as ast
+from clismo.lang.type import Type
 from clismo.lang.visitor import Visitor
-
-# from clismo.sim.client import Client
-# from clismo.sim.server import Server
-# from clismo.sim.simulation import Simulation
-# from clismo.sim.step import Step
+from clismo.sim.client import Client
+from clismo.sim.server import Server
+from clismo.sim.simulation import Simulation
+from clismo.sim.step import Step
 
 # pylint: disable=function-redefined
 # pylint: disable=missing-function-docstring
@@ -46,8 +46,16 @@ def _get_type_example(type_):
         return 1.0
     if type_ == builtin.cs_str:
         return "str"
-    if type_ == builtin.cs_list:
+    if type_.type_name.startswith("cs_list"):
         return [1, 2, 3]
+    if type_ == builtin.cs_client:
+        return Client("test")
+    if type_ == builtin.cs_server:
+        return Server("test", lambda x: 1)
+    if type_ == builtin.cs_simulation:
+        return Simulation("test", [], time_limit=1)
+    if type_ == builtin.cs_step:
+        return Step("test")
     raise Exception(f"Unknown type of node {type_}")
 
 
@@ -61,19 +69,6 @@ def _get_built_in_type(val):
     if isinstance(val, str):
         return builtin.cs_str
     raise Exception(f"Unknown type of constant {val}")
-
-
-def _get_type(node, context):
-    if isinstance(node, ast.Constant):
-        val = node.value
-        return _get_built_in_type(val)
-    if isinstance(node, ast.ListExpr):
-        return builtin.cs_list
-    if isinstance(node, ast.Name):
-        if node.name not in context:
-            raise Exception("Unknown variable: " + node.name)
-        return context[node.value]
-    raise Exception(f"Unknown type of node {node}")
 
 
 class SemanticChecker:
@@ -94,20 +89,20 @@ class SemanticChecker:
         self.current_func_name = None
 
     def resolve(self, name):
-        print(name)
         if name in self.context:
             return self.context[name]
         if name in self.attrs:
             return self.attrs[name]
         if name in self.global_vars:
             return self.global_vars[name]
-        if (
-            name in self.types["Clients"]
-            or name in self.types["Servers"]
-            or name in self.types["Simulations"]
-            or name in self.types["Steps"]
-        ):
-            return builtin.cs_object
+        if name in self.types["Clients"]:
+            return builtin.cs_client
+        if name in self.types["Servers"]:
+            return builtin.cs_server
+        if name in self.types["Simulations"]:
+            return builtin.cs_simulation
+        if name in self.types["Steps"]:
+            return builtin.cs_step
         raise Exception(f"Unknown variable: {name}")
 
     def define(self, name, type_):
@@ -115,15 +110,47 @@ class SemanticChecker:
             raise Exception(f"Can not redefine global variable: {name}")
         self.context[name] = type_
 
+    def _get_list_type(self, node):
+        first_type = self.visit(node.elements[0])
+        for elem in node.elements[1:]:
+            if self.visit(elem) != first_type:
+                raise Exception("All elements of list must be of the same type")
+        list_type = f"{first_type.type_name}_list"
+        return Type.get(list_type)
+
+    def _get_type(self, node):
+        if isinstance(node, ast.Constant):
+            val = node.value
+            return _get_built_in_type(val)
+        if isinstance(node, ast.ListExpr):
+            return self._get_list_type(node)
+        if isinstance(node, ast.Name):
+            if node.name not in self.context:
+                raise Exception("Unknown variable: " + node.name)
+            return self.context[node.value]
+        raise Exception(f"Unknown type of node {node}")
+
     @visitor
     def visit(self, node: ast.Program):
         for stmt in node.stmts:
             self.visit(stmt)
 
-    def _check_function_body(self, func_name, info, body, attrs):
+    def _check_function_body(self, func_name, info, body, attrs, obj):
+        if obj == "Clients":
+            obj_type = builtin.cs_client
+        elif obj == "Servers":
+            obj_type = builtin.cs_server
+        elif obj == "Simulations":
+            obj_type = builtin.cs_simulation
+        elif obj == "Steps":
+            obj_type = builtin.cs_step
+        else:
+            raise Exception(f"Unknown object type: {obj}")
+
+        self.global_vars["self"] = obj_type
         self.current_func_name = func_name
         for attr_name, attr_val in attrs.items():
-            self.attrs[attr_name] = _get_type(attr_val, self.context)
+            self.attrs[attr_name] = self._get_type(attr_val)
         if func_name == "on_server_out":
             self.return_type = builtin.cs_none
         elif func_name == "attend_client":
@@ -157,6 +184,11 @@ class SemanticChecker:
                 f"function) does not exist"
             )
 
+    def _set_attrs_type(self, attrs, type_, name):
+        for attr_name, attr_val in attrs.items():
+            attr_type = self.visit(attr_val)
+            self.types[type_][name][attr_name] = attr_type
+
     @visitor
     def visit(self, node: ast.ClientDef):
         attrs, functions = self._get_attrs_and_functions(
@@ -171,16 +203,17 @@ class SemanticChecker:
                             f"{node.name} on_server_out refers to "
                             f"unknown server {server_name}."
                         )
-                self._check_function_body("on_server_out", info, body, attrs)
+                self._check_function_body("on_server_out", info, body, attrs, "Clients")
         if "possible" in functions:
             val = functions.pop("possible")
             for info, body in val.items():
                 self._validate_possible_func(info, functions)
-                self._check_function_body("possible", info, body, attrs)
+                self._check_function_body("possible", info, body, attrs, "Clients")
         if functions:
             raise TypeError(
                 f"{node.name} has unknown functions: {list(functions.keys())}"
             )
+        self._set_attrs_type(attrs, "Clients", node.name)
 
     @visitor
     def visit(self, node: ast.ServerDef):
@@ -200,12 +233,12 @@ class SemanticChecker:
                     all_clients.remove(client_name)
                 if not info:
                     all_clients = ["DefaultClient"]
-                self._check_function_body("attend_client", info, body, attrs)
+                self._check_function_body("attend_client", info, body, attrs, "Servers")
         if "possible" in functions:
             val = functions.pop("possible")
             for info, body in val.items():
                 self._validate_possible_func(info, functions)
-                self._check_function_body("possible", info, body, attrs)
+                self._check_function_body("possible", info, body, attrs, "Servers")
         if len(all_clients) > 1 or (
             len(all_clients) == 1 and all_clients[0] != "DefaultClient"
         ):
@@ -217,6 +250,7 @@ class SemanticChecker:
             raise TypeError(
                 f"{node.name} has unknown functions: {list(functions.keys())}"
             )
+        self._set_attrs_type(attrs, "Servers", node.name)
 
     @visitor
     def visit(self, node: ast.StepDef):
@@ -240,11 +274,12 @@ class SemanticChecker:
             val = functions.pop("possible")
             for info, body in val.items():
                 self._validate_possible_func(info, attrs)
-                self._check_function_body("possible", info, body, attrs)
+                self._check_function_body("possible", info, body, attrs, "Steps")
         if functions:
             raise TypeError(
                 f"{node.name} has unknown functions: {list(functions.keys())}"
             )
+        self._set_attrs_type(attrs, "Steps", node.name)
 
     @visitor
     def visit(self, node: ast.SimulationDef):
@@ -313,7 +348,7 @@ class SemanticChecker:
                         f"{node.name} arrive function refers to "
                         f"unknown client type {client_type}."
                     )
-            self._check_function_body("arrive", info, body, attrs)
+            self._check_function_body("arrive", info, body, attrs, "Simulations")
 
         # Check minimize function
         if "minimize" in functions:
@@ -325,17 +360,18 @@ class SemanticChecker:
                     raise TypeError(
                         f"{node.name} minimize function must have no specifications"
                     )
-                self._check_function_body("minimize", info, body, attrs)
+                self._check_function_body("minimize", info, body, attrs, "Simulations")
 
         if "possible" in functions:
             val = functions.pop("possible")
             for info, body in val.items():
                 self._validate_possible_func(info, functions)
-                self._check_function_body("possible", info, body, attrs)
+                self._check_function_body("possible", info, body, attrs, "Simulations")
         if functions:
             raise TypeError(
                 f"{node.name} has unknown functions: {list(functions.keys())}"
             )
+        self._set_attrs_type(attrs, "Simulations", node.name)
 
     @visitor
     def visit(self, node: ast.Attr):
@@ -413,10 +449,52 @@ class SemanticChecker:
 
     @visitor
     def visit(self, node: ast.Call):
-        for arg in node.args:
-            self.visit(arg)
-        ret_type = builtin.resolve(node.name)[1]
-        return ret_type
+        args_type = [self.visit(arg) for arg in node.args]
+        if node.name == "get":
+            if len(node.args) != 2:
+                raise TypeError(
+                    f"get function must have exactly two arguments, "
+                    f"but got {len(node.args)}"
+                )
+            if not isinstance(node.args[1], ast.Constant) and not isinstance(
+                node.args[1].value, str
+            ):
+                raise TypeError(
+                    "get function second argument must be a constant string"
+                )
+            obj_type = self.visit(node.args[0])
+            if obj_type == builtin.cs_server:
+                type_ = "Servers"
+            elif obj_type == builtin.cs_simulation:
+                type_ = "Simulations"
+            elif obj_type == builtin.cs_client:
+                type_ = "Clients"
+            elif obj_type == builtin.cs_step:
+                type_ = "Steps"
+            else:
+                raise TypeError(
+                    f"get function first argument must be a server, "
+                    f"simulation, client, or step, but got {obj_type}"
+                )
+            attr_name = node.args[1].value
+            return list(self.types[type_].values())[0][attr_name]
+        ret_type = builtin.resolve(node.name)
+        if ret_type is None:
+            raise TypeError(f"{node.name} is not a known function.")
+        if isinstance(ret_type[1], Type):
+            return ret_type[1]
+        if node.name == "list":
+            if len(node.args) != 1:
+                raise TypeError(
+                    f"list function must have exactly one argument, "
+                    f"but got {len(node.args)}"
+                )
+            if not isinstance(node.args[0], ast.Constant) and not isinstance(
+                node.args[0].value, str
+            ):
+                raise TypeError(f"list function argument must be a constant string")
+            return ret_type[1](node.args[0].value)
+        return ret_type[1](*args_type)
 
     @visitor
     def visit(self, node: ast.BinOp):
@@ -440,9 +518,7 @@ class SemanticChecker:
 
     @visitor
     def visit(self, node: ast.ListExpr):
-        for item in node.elements:
-            self.visit(item)
-        return builtin.cs_list
+        return self._get_list_type(node)
 
     @visitor
     def visit(self, node: ast.Name):

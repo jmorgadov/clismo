@@ -1,10 +1,23 @@
-from clismo.builtin.cs_bool import cs_bool
-from clismo.builtin.cs_float import cs_float
-from clismo.builtin.cs_int import cs_int
-from clismo.builtin.cs_list import cs_list
-from clismo.builtin.cs_object import cs_object
-from clismo.builtin.cs_str import cs_str
-from clismo.builtin.cs_tuple import cs_tuple
-from clismo.builtin.cs_none import cs_none
+
+from clismo.lang.type import (
+    cs_client,
+    cs_server,
+    cs_simulation,
+    cs_step,
+    cs_bool,
+    cs_float,
+    cs_int,
+    cs_none,
+    cs_object,
+    cs_str,
+    cs_list_of_float,
+    cs_list_of_int,
+    cs_list_of_str,
+    cs_list_of_bool,
+    cs_list_of_client,
+    cs_list_of_server,
+    cs_list_of_step,
+    cs_list_of_simulation,
+)
 
 from clismo.builtin.cs_built_in_functions import resolve

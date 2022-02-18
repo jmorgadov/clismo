@@ -134,7 +134,7 @@ power:
     | atom
     | atom '**' factor
 
-atom: '[' test_list ']' | '[' ']'
+atom: '[' test_list ']'
     | NAME | NUMBER | STRING
     | 'None' | 'True' | 'False'
     | call

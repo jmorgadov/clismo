@@ -36,6 +36,8 @@ class Type:
         return all_attrs
 
     def subtype(self, other: Type):
+        if self.type_name == "any":
+            return True
         if not isinstance(other, tuple):
             other = (other,)
         for subtype in other:
@@ -45,8 +47,8 @@ class Type:
             return False
         return self.parent.subtype(other)
 
-    def __call__(self, *args, **kwargs):
-        return self.attributes["__new__"](*args, **kwargs)
+    def __call__(self, value):
+        return Instance(self, value)
 
     @staticmethod
     def new(type_name: str, *args, **kwargs):
@@ -56,6 +58,17 @@ class Type:
 
     @staticmethod
     def get(type_name: str):
+        if type_name == "list":
+            return (
+                cs_list_of_float,
+                cs_list_of_int,
+                cs_list_of_str,
+                cs_list_of_bool,
+                cs_list_of_client,
+                cs_list_of_server,
+                cs_list_of_step,
+                cs_list_of_simulation,
+            )
         if type_name not in Type.cs_types:
             raise ValueError(f"{type_name} is not a valid Clismo type")
         return Type.cs_types[type_name]
@@ -72,8 +85,6 @@ class Type:
             return Type.get("float")
         if value is None:
             return Type.get("none")
-        if isinstance(value, list):
-            return Type.get("list")
         if isinstance(value, dict):
             return Type.get("dict")
         if isinstance(value, tuple):
@@ -95,39 +106,9 @@ class Type:
 
 
 class Instance:
-    def __init__(self, _type: Type):
+    def __init__(self, _type: Type, value):
         self.type = _type
-        self._dict = self.type.get_attr_dict()
-        self._dict["__dict__"] = self._dict
-
-    def get(self, attr_name):
-        if attr_name == "__dict__":
-            return Type.get("dict")(self._dict)
-        if attr_name not in self._dict:
-            raise ValueError(f"{self.type.type_name} has no attribute {attr_name}")
-        return self._dict[attr_name]
-
-    def set(self, attr_name, value):
-        self._dict[attr_name] = value
-
-    def has_value(self):
-        return self.type.type_name in ["int", "float", "str", "bool"]
-
-    def get_value(self):
-        if self.has_value():
-            return self.get("__new__")(self.get("value"))
-        return self
-
-    def __iter__(self):
-        iterator = self.get("__iter__")(self)
-        while True:
-            try:
-                yield iterator.get("__next__")(iterator)
-            except StopIteration:
-                break
-
-    def __repr__(self):
-        return self.get("__repr__")(self).get("value")
+        self.value = value
 
 
 cs_object = Type("object")
@@ -135,6 +116,18 @@ cs_float = Type("float", cs_object)
 cs_int = Type("int", cs_float)
 cs_bool = Type("bool", cs_int)
 cs_str = Type("str", cs_object)
-cs_list = Type("list", cs_object)
-cs_tuple = Type("tuple", cs_object)
 cs_none = Type("none", cs_object)
+cs_any = Type("any", cs_object)
+cs_client = Type("client", cs_object)
+cs_server = Type("server", cs_object)
+cs_step = Type("step", cs_object)
+cs_simulation = Type("simulation", cs_object)
+
+cs_list_of_float = Type("float_list", cs_object)
+cs_list_of_int = Type("int_list", cs_object)
+cs_list_of_str = Type("str_list", cs_object)
+cs_list_of_bool = Type("bool_list", cs_object)
+cs_list_of_client = Type("client_list", cs_object)
+cs_list_of_server = Type("server_list", cs_object)
+cs_list_of_step = Type("step_list", cs_object)
+cs_list_of_simulation = Type("simulation_list", cs_object)

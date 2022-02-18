@@ -52,6 +52,7 @@ def test_simple_simulation():
     arrival_func = lambda: 1
 
     sim = Simulation(
+        "test",
         steps=[step],
         client_limit=10,
     )
