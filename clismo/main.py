@@ -8,11 +8,13 @@ from clismo.compiler import Grammar, LR1Parser, ParserManager
 # from clismo.lang.context import Context
 from clismo.cs_builders import builders
 from clismo.cs_tokenizer import tknz
-from clismo.optimization.client_server_optimizer import ModelOptimizer
-from clismo.sim.client import Client
-from clismo.sim.server import Server
-from clismo.sim.simulation import Simulation
-from clismo.sim.step import Step
+# from clismo.optimization.client_server_optimizer import ModelOptimizer
+# from clismo.sim.client import Client
+# from clismo.sim.server import Server
+# from clismo.sim.simulation import Simulation
+# from clismo.sim.step import Step
+from clismo.visitors.type_builder import TypeBuilder
+from clismo.visitors.semantic_checker import SemanticChecker
 
 # Set logging level to DEBUG
 # logging.basicConfig(level=logging.DEBUG)
@@ -54,6 +56,12 @@ def run(
     program = get_ast(input_path, verbose)
     if dump:
         program.dump()
+
+    type_builder = TypeBuilder()
+    type_builder.visit(program)
+
+    semantic_checker = SemanticChecker(type_builder.types)
+    semantic_checker.visit(program)
 
     # # Evaluate
     # echo("Program output:", verbose)
