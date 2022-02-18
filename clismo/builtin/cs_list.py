@@ -9,8 +9,3 @@ def cs__new__(value: list):
     _inst = Instance(cs_list)
     _inst.set("value", list(value))
     return _inst
-
-
-@cs_list.method("__repr__")
-def cs__repr__(self):
-    return cs_str(repr(self.get("value")))
