@@ -15,9 +15,9 @@ cs_list = Type.get("list")
 cs_bool = Type.get("bool")
 
 
-def builtin_func(func_name):
+def builtin_func(func_name, return_type):
     def deco(func):
-        __BUILTINS[func_name] = func
+        __BUILTINS[func_name] = (func, return_type)
         return func
 
     return deco
@@ -27,199 +27,117 @@ def resolve(func_name):
     return __BUILTINS.get(func_name, None)
 
 
-@builtin_func("repr")
-def cs_repr(arg):
-    return arg.get("__repr__")(arg)
+#region Numeric Functions
 
 
-@builtin_func("print")
-def cs_print(value, *args, sep=cs_str(" "), end=cs_str("\n")):
-    values = [value.get("__str__")(value).get("value")] + [
-        arg.get("__str__")(arg).get("value") for arg in args
-    ]
-    builtins.print(*values, sep=sep.get("value"), end=end.get("value"))
-
-
-@builtin_func("abs")
+@builtin_func("abs", cs_float)
 def cs_abs(x: cs_float):
     return cs_float(builtins.abs(x.get("value")))
 
 
-@builtin_func("bin")
+@builtin_func("bin", cs_str)
 def cs_bin(x: cs_int):
     return cs_str(builtins.bin(x.get("value")))
 
 
-@builtin_func("pow")
-def cs_pow(base, exp, mod):
-    return cs_float(builtins.pow(base.get("value"), exp.get("value"), mod.get("value")))
-
-
-@builtin_func("round")
+@builtin_func("round", cs_float)
 def cs_round(x, ndigits=None):
     if ndigits is None:
         return cs_float(builtins.round(x.get("value")))
     return cs_float(builtins.round(x.get("value"), ndigits.get("value")))
 
 
-@builtin_func("sum")
-def cs_sum(iterable, start=cs_int(0)):
-    if "__iter__" in iterable._dict:
-        answ = None
-        for item in iterable:
-            if answ is None:
-                answ = item
-            else:
-                answ = answ.get("__add__")(answ, item)
-        return answ
-    raise excpt.InvalidTypeError("sum() can't sum non-iterable")
-
-
-@builtin_func("sorted")
-def cs_sorted(iterable, key=None, reverse=cs_bool(False)):
-    raise NotImplementedError("sorted() is not implemented yet")
-
-
-@builtin_func("iter")
-def cs_iter(x):
-    return x.get("__iter__")(x)
-
-
-@builtin_func("max")
-def cs_max(a, *args):
-    if args:
-        answ = a
-        for arg in args:
-            answ = answ.get("__gt__")(answ, arg)
-        return answ
-
-    if "__iter__" in a._dict:
-        answ = None
-        for item in a:
-            if answ is None:
-                answ = item
-            else:
-                answ = answ.get("__gt__")(answ, item)
-        return answ
-    return a
-
-
-@builtin_func("min")
-def cs_min(a, *args):
-    if args:
-        answ = a
-        for arg in args:
-            answ = answ.get("__lt__")(answ, arg)
-        return answ
-
-    if "__iter__" in a._dict:
-        answ = None
-        for item in a:
-            if answ is None:
-                answ = item
-            else:
-                answ = answ.get("__lt__")(answ, item)
-        return answ
-    return a
-
-
-@builtin_func("len")
-def cs_len(x):
-    return x.get("__len__")(x)
-
-
-@builtin_func("hash")
-def cs_hash(x):
-    return x.get("__hash__")(x)
-
-
-@builtin_func("input")
-def cs_input():
-    return cs_str(builtins.input())
-
-
-@builtin_func("range")
-def cs_range(start, stop=None, step=None):
-    if stop is None:
-        stop = start
-        start = cs_int(0)
-    if step is None:
-        step = cs_int(1)
-
-    def move_next(self):
-        if not "current" in self._dict:
-            self.set("current", start)
-            return start
-        old_current = self.get("current")
-        self.set("current", old_current.get("__add__")(old_current, step))
-        current = self.get("current")
-        if current.get("__ge__")(current, stop).get("value"):
-            raise StopIteration
-        return current
-
-    return Type.new("generator", move_next)
-
-
-@builtin_func("rand")
+@builtin_func("rand", cs_float)
 def cs_rand():
     return cs_float(random.random())
 
 
-@builtin_func("randint")
+@builtin_func("randint", cs_str)
 def cs_randint(a, b):
     return cs_int(random.randint(a.get("value"), b.get("value")))
 
 
-@builtin_func("norm")
+@builtin_func("norm", cs_float)
 def cs_norm():
     return cs_float(random.normalvariate(0, 1))
 
 
-@builtin_func("sqrt")
+@builtin_func("sqrt", cs_float)
 def cs_sqrt(x):
     return cs_float(math.sqrt(x.get("value")))
 
 
-@builtin_func("sleep")
+@builtin_func("sleep", cs_float)
 def cs_sleep(x: cs_float):
     return cs_float(sleep(x))
 
 
-@builtin_func("log")
+@builtin_func("log", cs_float)
 def log(x, base):
     return cs_float(math.log(x.get("value"), base.get("value")))
 
 
-@builtin_func("log2")
+@builtin_func("log2", cs_float)
 def log2(x):
     return cs_float(math.log2(x.get("value")))
 
 
-@builtin_func("exp")
+@builtin_func("exp", cs_float)
 def exp(x):
     return cs_float(math.exp(x.get("value")))
 
 
-@builtin_func("ceil")
+@builtin_func("ceil", cs_int)
 def ceil(x):
     return cs_int(math.ceil(x.get("value")))
 
 
-@builtin_func("floor")
+@builtin_func("floor", cs_int)
 def floor(x):
     return cs_int(math.floor(x.get("value")))
 
 
-@builtin_func("sin")
+@builtin_func("sin", cs_float)
 def sin(x):
     return cs_float(math.sin(x.get("value")))
 
 
-@builtin_func("cos")
+@builtin_func("cos", cs_float)
 def cos(x):
-    return cs_int(math.cos(x.get("value")))
+    return cs_float(math.cos(x.get("value")))
 
 
-@builtin_func("tan")
+@builtin_func("tan", cs_float)
 def tan(x):
-    return cs_int(math.tan(x.get("value")))
+    return cs_float(math.tan(x.get("value")))
+
+
+#endregion
+
+
+#region List Functions
+
+
+@builtin_func("len", cs_int)
+def cs_len(x):
+    if x.type.subtype(cs_list):
+        return len(x.get('value'))
+    
+
+
+@builtin_func("get_at", cs_int)
+def cs_get_at(x, index):
+    if x.type.subtype(cs_list):
+        if index.type.subtype(cs_int):
+            return x.get('value')[index.get('value')]
+
+
+
+@builtin_func("set_at", cs_int)
+def cs_set_at(x, index, obj):
+    if x.type.subtype(cs_list):
+        if index.type.subtype(cs_int):
+            x.get('value')[index.get('value')] = obj.get('value')
+
+
+#endregion
