@@ -87,6 +87,12 @@ class Type:
         val_type = Type.get_type(value)
         return val_type(value)
 
+    def __repr__(self):
+        return f"<Type {self.type_name}>"
+
+    def __str__(self):
+        return f"<Type {self.type_name}>"
+
 
 class Instance:
     def __init__(self, _type: Type):

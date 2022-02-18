@@ -1,3 +1,5 @@
+import operator
+
 import clismo.builtin as builtin
 import clismo.cs_ast as ast
 from clismo.lang.visitor import Visitor
@@ -12,25 +14,66 @@ from clismo.lang.visitor import Visitor
 # pylint: disable=unpacking-non-sequence
 
 
+OPERATOR_FUNC = {
+    ast.Operator.ADD: operator.add,
+    ast.Operator.SUB: operator.sub,
+    ast.Operator.MUL: operator.mul,
+    ast.Operator.DIV: operator.truediv,
+    ast.Operator.POW: operator.pow,
+    ast.Operator.MOD: operator.mod,
+    ast.Operator.POW: operator.pow,
+    ast.Operator.LSHIFT: operator.lshift,
+    ast.Operator.RSHIFT: operator.rshift,
+    ast.Operator.BIT_XOR: operator.xor,
+    ast.Operator.BIT_AND: operator.and_,
+    ast.Operator.BIT_OR: operator.or_,
+    ast.Operator.FLOORDIV: operator.floordiv,
+    ast.Operator.EQ: operator.eq,
+    ast.Operator.NOT_EQ: operator.ne,
+    ast.Operator.LT: operator.lt,
+    ast.Operator.GT: operator.gt,
+    ast.Operator.LTE: operator.le,
+    ast.Operator.GTE: operator.ge,
+}
+
+
+def _get_type_example(type_):
+    if type_ == builtin.cs_bool:
+        return True
+    if type_ == builtin.cs_int:
+        return 1
+    if type_ == builtin.cs_float:
+        return 1.0
+    if type_ == builtin.cs_str:
+        return "str"
+    if type_ == builtin.cs_list:
+        return [1, 2, 3]
+    raise Exception(f"Unknown type of node {type_}")
+
+
+def _get_built_in_type(val):
+    if isinstance(val, bool):
+        return builtin.cs_bool
+    if isinstance(val, int):
+        return builtin.cs_int
+    if isinstance(val, float):
+        return builtin.cs_float
+    if isinstance(val, str):
+        return builtin.cs_str
+    raise Exception(f"Unknown type of constant {val}")
+
+
 def _get_type(node, context):
     if isinstance(node, ast.Constant):
         val = node.value
-        if isinstance(val, bool):
-            return builtin.cs_bool
-        if isinstance(val, int):
-            return builtin.cs_int
-        if isinstance(val, float):
-            return builtin.cs_float
-        if isinstance(val, str):
-            return builtin.cs_str
-        raise Exception("Unknown type of constant")
+        return _get_built_in_type(val)
     if isinstance(node, ast.ListExpr):
         return builtin.cs_list
     if isinstance(node, ast.Name):
         if node.name not in context:
             raise Exception("Unknown variable: " + node.name)
         return context[node.value]
-    raise Exception("Unknown type of node")
+    raise Exception(f"Unknown type of node {node}")
 
 
 class SemanticChecker:
@@ -44,16 +87,27 @@ class SemanticChecker:
             "time": builtin.cs_float,
             "clients": builtin.cs_int,
             "self": builtin.cs_object,
+            "unif": builtin.cs_float,
+            "rand": builtin.cs_float,
         }
         self.return_type = None
+        self.current_func_name = None
 
     def resolve(self, name):
+        print(name)
         if name in self.context:
             return self.context[name]
         if name in self.attrs:
             return self.attrs[name]
         if name in self.global_vars:
             return self.global_vars[name]
+        if (
+            name in self.types["Clients"]
+            or name in self.types["Servers"]
+            or name in self.types["Simulations"]
+            or name in self.types["Steps"]
+        ):
+            return builtin.cs_object
         raise Exception(f"Unknown variable: {name}")
 
     def define(self, name, type_):
@@ -67,6 +121,7 @@ class SemanticChecker:
             self.visit(stmt)
 
     def _check_function_body(self, func_name, info, body, attrs):
+        self.current_func_name = func_name
         for attr_name, attr_val in attrs.items():
             self.attrs[attr_name] = _get_type(attr_val, self.context)
         if func_name == "on_server_out":
@@ -297,7 +352,7 @@ class SemanticChecker:
             self.define(node.name, val_type)
             return
         old_type = self.resolve(node.name)
-        if old_type != val_type:
+        if not old_type.subtype(val_type):
             raise TypeError(
                 f"{node.name} has type {old_type.type_name} but is being assigned "
                 f"type {val_type.type_name}."
@@ -306,7 +361,7 @@ class SemanticChecker:
     @visitor
     def visit(self, node: ast.If):
         cond_type = self.visit(node.cond)
-        if cond_type != builtin.cs_bool:
+        if not cond_type.subtype(builtin.cs_bool):
             raise TypeError(
                 f"Condtion has type {cond_type.type_name} but must be bool."
             )
@@ -316,7 +371,7 @@ class SemanticChecker:
     @visitor
     def visit(self, node: ast.Return):
         val_type = self.visit(node.value)
-        if val_type != self.return_type:
+        if not val_type.subtype(self.return_type):
             raise TypeError(
                 f"Return value has type {val_type.type_name} but must "
                 f"be {self.return_type.type_name}."
@@ -329,19 +384,19 @@ class SemanticChecker:
         start, end, step = node.start, node.end, node.step
         if start is not None:
             start_type = self.visit(start)
-            if start_type != builtin.cs_int:
+            if not start_type.subtype(builtin.cs_int):
                 raise TypeError(
                     f"Loop start has type {start_type.type_name} but must be int."
                 )
         if end is not None:
             end_type = self.visit(end)
-            if end_type != builtin.cs_int:
+            if not end_type.subtype(builtin.cs_int):
                 raise TypeError(
                     f"Loop end has type {end_type.type_name} but must be int."
                 )
         if step is not None:
             step_type = self.visit(step)
-            if step_type != builtin.cs_int:
+            if not step_type.subtype(builtin.cs_int):
                 raise TypeError(
                     f"Loop step has type {step_type.type_name} but must be int."
                 )
@@ -360,11 +415,24 @@ class SemanticChecker:
     def visit(self, node: ast.Call):
         for arg in node.args:
             self.visit(arg)
-        return builtin.resolve(node.name)[1]
+        ret_type = builtin.resolve(node.name)[1]
+        return ret_type
 
     @visitor
     def visit(self, node: ast.BinOp):
-        pass
+        left_type = self.visit(node.left)
+        right_type = self.visit(node.right)
+        oper = OPERATOR_FUNC[node.op]
+        exmp_left = _get_type_example(left_type)
+        exmp_right = _get_type_example(right_type)
+        try:
+            new_type = _get_built_in_type(oper(exmp_left, exmp_right))
+        except Exception:
+            raise TypeError(
+                f"{node.op} cannot be applied to types {left_type.type_name} and "
+                f"{right_type.type_name}."
+            )
+        return new_type
 
     @visitor
     def visit(self, node: ast.UnaryOp):
@@ -382,4 +450,4 @@ class SemanticChecker:
 
     @visitor
     def visit(self, node: ast.Constant):
-        return _get_type(node.value, None)
+        return _get_built_in_type(node.value)
