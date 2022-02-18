@@ -3,17 +3,16 @@ import math
 import random
 from time import sleep
 
-import numlab.exceptions as excpt
-from numlab.lang.type import Type
+import clismo.exceptions as excpt
+from clismo.lang.type import Type
 
 __BUILTINS = {}
 
-nl_float = Type.get("float")
-nl_int = Type.get("int")
-nl_str = Type.get("str")
-nl_list = Type.get("list")
-nl_bool = Type.get("bool")
-nl_function = Type.get("function")
+cs_float = Type.get("float")
+cs_int = Type.get("int")
+cs_str = Type.get("str")
+cs_list = Type.get("list")
+cs_bool = Type.get("bool")
 
 
 def builtin_func(func_name):
@@ -29,12 +28,12 @@ def resolve(func_name):
 
 
 @builtin_func("repr")
-def nl_repr(arg):
+def cs_repr(arg):
     return arg.get("__repr__")(arg)
 
 
 @builtin_func("print")
-def nl_print(value, *args, sep=nl_str(" "), end=nl_str("\n")):
+def cs_print(value, *args, sep=cs_str(" "), end=cs_str("\n")):
     values = [value.get("__str__")(value).get("value")] + [
         arg.get("__str__")(arg).get("value") for arg in args
     ]
@@ -42,29 +41,29 @@ def nl_print(value, *args, sep=nl_str(" "), end=nl_str("\n")):
 
 
 @builtin_func("abs")
-def nl_abs(x: nl_float):
-    return nl_float(builtins.abs(x.get("value")))
+def cs_abs(x: cs_float):
+    return cs_float(builtins.abs(x.get("value")))
 
 
 @builtin_func("bin")
-def nl_bin(x: nl_int):
-    return nl_str(builtins.bin(x.get("value")))
+def cs_bin(x: cs_int):
+    return cs_str(builtins.bin(x.get("value")))
 
 
 @builtin_func("pow")
-def nl_pow(base, exp, mod):
-    return nl_float(builtins.pow(base.get("value"), exp.get("value"), mod.get("value")))
+def cs_pow(base, exp, mod):
+    return cs_float(builtins.pow(base.get("value"), exp.get("value"), mod.get("value")))
 
 
 @builtin_func("round")
-def nl_round(x, ndigits=None):
+def cs_round(x, ndigits=None):
     if ndigits is None:
-        return nl_float(builtins.round(x.get("value")))
-    return nl_float(builtins.round(x.get("value"), ndigits.get("value")))
+        return cs_float(builtins.round(x.get("value")))
+    return cs_float(builtins.round(x.get("value"), ndigits.get("value")))
 
 
 @builtin_func("sum")
-def nl_sum(iterable, start=nl_int(0)):
+def cs_sum(iterable, start=cs_int(0)):
     if "__iter__" in iterable._dict:
         answ = None
         for item in iterable:
@@ -77,17 +76,17 @@ def nl_sum(iterable, start=nl_int(0)):
 
 
 @builtin_func("sorted")
-def nl_sorted(iterable, key=None, reverse=nl_bool(False)):
+def cs_sorted(iterable, key=None, reverse=cs_bool(False)):
     raise NotImplementedError("sorted() is not implemented yet")
 
 
 @builtin_func("iter")
-def nl_iter(x):
+def cs_iter(x):
     return x.get("__iter__")(x)
 
 
 @builtin_func("max")
-def nl_max(a, *args):
+def cs_max(a, *args):
     if args:
         answ = a
         for arg in args:
@@ -106,7 +105,7 @@ def nl_max(a, *args):
 
 
 @builtin_func("min")
-def nl_min(a, *args):
+def cs_min(a, *args):
     if args:
         answ = a
         for arg in args:
@@ -125,27 +124,27 @@ def nl_min(a, *args):
 
 
 @builtin_func("len")
-def nl_len(x):
+def cs_len(x):
     return x.get("__len__")(x)
 
 
 @builtin_func("hash")
-def nl_hash(x):
+def cs_hash(x):
     return x.get("__hash__")(x)
 
 
 @builtin_func("input")
-def nl_input():
-    return nl_str(builtins.input())
+def cs_input():
+    return cs_str(builtins.input())
 
 
 @builtin_func("range")
-def nl_range(start, stop=None, step=None):
+def cs_range(start, stop=None, step=None):
     if stop is None:
         stop = start
-        start = nl_int(0)
+        start = cs_int(0)
     if step is None:
-        step = nl_int(1)
+        step = cs_int(1)
 
     def move_next(self):
         if not "current" in self._dict:
@@ -162,83 +161,65 @@ def nl_range(start, stop=None, step=None):
 
 
 @builtin_func("rand")
-def nl_rand():
-    return nl_float(random.random())
+def cs_rand():
+    return cs_float(random.random())
 
 
 @builtin_func("randint")
-def nl_randint(a, b):
-    return nl_int(random.randint(a.get("value"), b.get("value")))
+def cs_randint(a, b):
+    return cs_int(random.randint(a.get("value"), b.get("value")))
 
 
 @builtin_func("norm")
-def nl_norm():
-    return nl_float(random.normalvariate(0, 1))
+def cs_norm():
+    return cs_float(random.normalvariate(0, 1))
 
 
 @builtin_func("sqrt")
-def nl_sqrt(x):
-    return nl_float(math.sqrt(x.get("value")))
+def cs_sqrt(x):
+    return cs_float(math.sqrt(x.get("value")))
 
 
 @builtin_func("sleep")
-def nl_sleep(x: nl_float):
-    return nl_float(sleep(x))
+def cs_sleep(x: cs_float):
+    return cs_float(sleep(x))
 
 
 @builtin_func("log")
 def log(x, base):
-    return nl_float(math.log(x.get("value"), base.get("value")))
+    return cs_float(math.log(x.get("value"), base.get("value")))
 
 
 @builtin_func("log2")
 def log2(x):
-    return nl_float(math.log2(x.get("value")))
+    return cs_float(math.log2(x.get("value")))
 
 
 @builtin_func("exp")
 def exp(x):
-    return nl_float(math.exp(x.get("value")))
+    return cs_float(math.exp(x.get("value")))
 
 
 @builtin_func("ceil")
 def ceil(x):
-    return nl_int(math.ceil(x.get("value")))
+    return cs_int(math.ceil(x.get("value")))
 
 
 @builtin_func("floor")
 def floor(x):
-    return nl_int(math.floor(x.get("value")))
+    return cs_int(math.floor(x.get("value")))
 
 
 @builtin_func("sin")
 def sin(x):
-    return nl_float(math.sin(x.get("value")))
+    return cs_float(math.sin(x.get("value")))
 
 
 @builtin_func("cos")
 def cos(x):
-    return nl_int(math.cos(x.get("value")))
+    return cs_int(math.cos(x.get("value")))
 
 
 @builtin_func("tan")
 def tan(x):
-    return nl_int(math.tan(x.get("value")))
-
-
-@builtin_func("montcar")
-def nl_montcar(n, func):
-    if not n.type.subtype(nl_int):
-        raise excpt.InvalidTypeError("montcar() argument 1 must be an integer")
-    if n.get("value") <= 0:
-        raise excpt.ValueError("montcar() argument 1 must be > 0")
-    if not func.type.subtype(nl_function):
-        raise excpt.InvalidTypeError(
-            "montcar() argument 2 must be a function (predicate)"
-        )
-    true_count, total_count = 0, 0
-    for _ in range(n.get("value")):
-        total_count += 1
-        if func.get("__call__")(func).get("value"):
-            true_count += 1
-    return nl_float(true_count / total_count)
+    return cs_int(math.tan(x.get("value")))

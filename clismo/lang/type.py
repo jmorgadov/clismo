@@ -4,13 +4,13 @@ from typing import Any, Callable, Dict, List
 
 
 class Type:
-    nl_types = {}
+    cs_types = {}
 
     def __init__(self, type_name: str, parent: Type = None):
         self.type_name = type_name
         self.attributes: Dict[str, Any] = {}
         self.parent = parent
-        Type.nl_types[type_name] = self
+        Type.cs_types[type_name] = self
 
     def add_attribute(self, attribute: str, default: Any = None):
         self.attributes[attribute] = default
@@ -50,15 +50,15 @@ class Type:
 
     @staticmethod
     def new(type_name: str, *args, **kwargs):
-        if type_name not in Type.nl_types:
-            raise ValueError(f"{type_name} is not a valid NumLab type")
-        return Type.nl_types[type_name](*args, **kwargs)
+        if type_name not in Type.cs_types:
+            raise ValueError(f"{type_name} is not a valid Clismo type")
+        return Type.cs_types[type_name](*args, **kwargs)
 
     @staticmethod
     def get(type_name: str):
-        if type_name not in Type.nl_types:
-            raise ValueError(f"{type_name} is not a valid NumLab type")
-        return Type.nl_types[type_name]
+        if type_name not in Type.cs_types:
+            raise ValueError(f"{type_name} is not a valid Clismo type")
+        return Type.cs_types[type_name]
 
     @staticmethod
     def get_type(value):
@@ -124,16 +124,11 @@ class Instance:
         return self.get("__repr__")(self).get("value")
 
 
-nl_object = Type("object")
-nl_float = Type("float", nl_object)
-nl_int = Type("int", nl_float)
-nl_bool = Type("bool", nl_int)
-nl_str = Type("str", nl_object)
-nl_dict = Type("dict", nl_object)
-nl_list = Type("list", nl_object)
-nl_tuple = Type("tuple", nl_object)
-nl_set = Type("set", nl_object)
-nl_slice = Type("slice", nl_object)
-nl_function = Type("function", nl_object)
-nl_generator = Type("generator", nl_object)
-nl_none = Type("none", nl_object)
+cs_object = Type("object")
+cs_float = Type("float", cs_object)
+cs_int = Type("int", cs_float)
+cs_bool = Type("bool", cs_int)
+cs_str = Type("str", cs_object)
+cs_list = Type("list", cs_object)
+cs_tuple = Type("tuple", cs_object)
+cs_none = Type("none", cs_object)
