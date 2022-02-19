@@ -1,6 +1,6 @@
 
 client Normal:
-    test_val = 0
+    test_val = 5
 
     possible(test_val):
         return randint(2, 10)
@@ -34,7 +34,7 @@ step P1:
         return new_servers
 
 simulation Test:
-    mode = "optimize"
+    mode = "run"
     steps = [P1]
     client_limit = 50
 
