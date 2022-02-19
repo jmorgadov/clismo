@@ -9,6 +9,7 @@ class Step(OptimizableObject):
         self.name = name
         self.servers = servers or []
         self.clients_queue = []
+        self.attrs = {}
 
     def add_server(self, server):
         self.servers.append(server)
@@ -30,3 +31,6 @@ class Step(OptimizableObject):
             client = self.clients_queue.pop(0)
             return self.assign_client_to_server(client)
         return None, None
+
+    def __repr__(self):
+        return self.name

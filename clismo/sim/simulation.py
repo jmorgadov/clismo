@@ -14,11 +14,10 @@ class Simulation(OptimizableObject):
         self.time = 0
         self.clients = 0
         self.events = PriorityQueue()
-        if time_limit is None and client_limit is None:
-            raise ValueError("Either time_limit or client_limit must be specified")
         self.time_limit = time_limit
         self.client_limit = client_limit
         self.minimize_func = None
+        self.attrs = {}
 
     def add_arrival_func(self, arrival_func, client):
         self.arrival_funcs.append((arrival_func, client))
@@ -32,7 +31,9 @@ class Simulation(OptimizableObject):
                 (self.time + delta_time, delta_time, client, Server.ghost(), 0)
             )
 
-    def run(self):
+    def run(self, verbose=False):
+        if self.time_limit is None and self.client_limit is None:
+            raise ValueError("Either time_limit or client_limit must be specified")
         if not self.arrival_funcs:
             raise ValueError("No arrival functions specified")
         self.time = 0
@@ -47,12 +48,12 @@ class Simulation(OptimizableObject):
             if self.events.empty():
                 self.__run_arrivals()
             time, delta_time, client, last_server, step = self.events.get()
-            if step < len(self.steps):
+            if step < len(self.steps) and verbose:
                 print(
                     f"{round(time, 3):>10} {client.name} "
                     f"arrived at {self.steps[step].name}",
                 )
-            else:
+            elif verbose:
                 print(
                     f"{round(time, 3):>10} {client.name} out of system",
                 )
@@ -79,3 +80,8 @@ class Simulation(OptimizableObject):
                 self.events.put(
                     (self.time + event_time, event_time, client, server, step + 1)
                 )
+        if verbose:
+            print()
+
+    def __repr__(self):
+        return self.name

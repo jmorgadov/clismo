@@ -82,11 +82,16 @@ class SemanticChecker:
             "time": builtin.cs_float,
             "clients": builtin.cs_int,
             "self": builtin.cs_object,
-            "unif": builtin.cs_float,
-            "rand": builtin.cs_float,
+            "current_client": builtin.cs_client,
         }
         self.return_type = None
         self.current_func_name = None
+        self.objects = {
+            "Clients": {"DefaultClient": Client("DefaultClient")},
+            "Servers": {},
+            "Steps": {},
+            "Simulations": {},
+        }
 
     def resolve(self, name):
         if name in self.context:
@@ -134,6 +139,8 @@ class SemanticChecker:
     def visit(self, node: ast.Program):
         for stmt in node.stmts:
             self.visit(stmt)
+        if not self.objects["Simulations"]:
+            raise Exception("There must exist at least one simulation object")
 
     def _check_function_body(self, func_name, info, body, attrs, obj):
         if obj == "Clients":
@@ -194,6 +201,8 @@ class SemanticChecker:
         attrs, functions = self._get_attrs_and_functions(
             self.types["Clients"][node.name]
         )
+        self._set_attrs_type(attrs, "Clients", node.name)
+        self.objects["Clients"][node.name] = Client(node.name)
         if "on_server_out" in functions:
             val = functions.pop("on_server_out")
             for info, body in val.items():
@@ -207,54 +216,45 @@ class SemanticChecker:
         if "possible" in functions:
             val = functions.pop("possible")
             for info, body in val.items():
-                self._validate_possible_func(info, functions)
+                self._validate_possible_func(info, attrs)
                 self._check_function_body("possible", info, body, attrs, "Clients")
         if functions:
             raise TypeError(
                 f"{node.name} has unknown functions: {list(functions.keys())}"
             )
-        self._set_attrs_type(attrs, "Clients", node.name)
 
     @visitor
     def visit(self, node: ast.ServerDef):
         attrs, functions = self._get_attrs_and_functions(
             self.types["Servers"][node.name]
         )
-        all_clients = list(self.types["Clients"].keys())
+        self._set_attrs_type(attrs, "Servers", node.name)
+        self.objects["Servers"][node.name] = Server(node.name, None)
         if "attend_client" in functions:
             val = functions.pop("attend_client")
+            if len(list(val.items())) != 1:
+                raise TypeError("There must exist exactly one 'attend_client' function")
             for info, body in val.items():
-                for client_name in info:
-                    if client_name not in self.types["Clients"]:
-                        raise TypeError(
-                            f"{node.name} attend_client refers to "
-                            f"unknown client {client_name}."
-                        )
-                    all_clients.remove(client_name)
-                if not info:
-                    all_clients = ["DefaultClient"]
-                self._check_function_body("attend_client", info, body, attrs, "Servers")
+                if info:
+                    raise TypeError(
+                        "'attend_client' function must not have any specifications"
+                    )
+                self._check_function_body("attend_client", [], body, attrs, "Servers")
         if "possible" in functions:
             val = functions.pop("possible")
             for info, body in val.items():
-                self._validate_possible_func(info, functions)
+                self._validate_possible_func(info, attrs)
                 self._check_function_body("possible", info, body, attrs, "Servers")
-        if len(all_clients) > 1 or (
-            len(all_clients) == 1 and all_clients[0] != "DefaultClient"
-        ):
-            raise TypeError(
-                f"Server {node.name} does not attend the following "
-                f"clients: {all_clients}."
-            )
         if functions:
             raise TypeError(
                 f"{node.name} has unknown functions: {list(functions.keys())}"
             )
-        self._set_attrs_type(attrs, "Servers", node.name)
 
     @visitor
     def visit(self, node: ast.StepDef):
         attrs, functions = self._get_attrs_and_functions(self.types["Steps"][node.name])
+        self._set_attrs_type(attrs, "Steps", node.name)
+        self.objects["Steps"][node.name] = Step(node.name)
         if "servers" not in attrs:
             raise TypeError(f"{node.name} does not have servers.")
         servers = attrs["servers"]
@@ -279,13 +279,14 @@ class SemanticChecker:
             raise TypeError(
                 f"{node.name} has unknown functions: {list(functions.keys())}"
             )
-        self._set_attrs_type(attrs, "Steps", node.name)
 
     @visitor
     def visit(self, node: ast.SimulationDef):
         attrs, functions = self._get_attrs_and_functions(
             self.types["Simulations"][node.name]
         )
+        self._set_attrs_type(attrs, "Simulations", node.name)
+        self.objects["Simulations"][node.name] = Simulation(node.name, None)
 
         # Check steps
         if "steps" not in attrs:
@@ -365,13 +366,12 @@ class SemanticChecker:
         if "possible" in functions:
             val = functions.pop("possible")
             for info, body in val.items():
-                self._validate_possible_func(info, functions)
+                self._validate_possible_func(info, attrs)
                 self._check_function_body("possible", info, body, attrs, "Simulations")
         if functions:
             raise TypeError(
                 f"{node.name} has unknown functions: {list(functions.keys())}"
             )
-        self._set_attrs_type(attrs, "Simulations", node.name)
 
     @visitor
     def visit(self, node: ast.Attr):
@@ -477,7 +477,26 @@ class SemanticChecker:
                     f"simulation, client, or step, but got {obj_type}"
                 )
             attr_name = node.args[1].value
-            return list(self.types[type_].values())[0][attr_name]
+            for val in self.types[type_].values():
+                if attr_name in val:
+                    return val[attr_name]
+            raise TypeError(
+                f"{type_} {attr_name} does not exist."
+            )
+        if node.name == "set":
+            if len(node.args) != 3:
+                raise TypeError(
+                    f"set function must have exactly three arguments, "
+                    f"but got {len(node.args)}"
+                )
+            if not isinstance(node.args[1], ast.Constant) and not isinstance(
+                node.args[1].value, str
+            ):
+                raise TypeError(
+                    "set function second argument must be a "
+                    "constant string (the attribute name)"
+                )
+            return builtin.cs_none
         ret_type = builtin.resolve(node.name)
         if ret_type is None:
             raise TypeError(f"{node.name} is not a known function.")
@@ -514,7 +533,7 @@ class SemanticChecker:
 
     @visitor
     def visit(self, node: ast.UnaryOp):
-        return self.visit(node.value)
+        return self.visit(node.expr)
 
     @visitor
     def visit(self, node: ast.ListExpr):

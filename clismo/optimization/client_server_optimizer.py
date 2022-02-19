@@ -37,7 +37,10 @@ class ModelOptimizer(GeneticAlg):
         Apply a solution to the model
         """
         for obj, attr_name, value in sol:
-            setattr(obj, attr_name, value)
+            if hasattr(obj, attr_name):
+                setattr(obj, attr_name, value)
+            else:
+                obj.attrs[attr_name] = value
 
     def eval(self, solution) -> float:
         """

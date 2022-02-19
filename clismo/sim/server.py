@@ -23,8 +23,5 @@ class Server(OptimizableObject):
     def get(self):
         return Server(self.name, self.func, **self.attrs)
 
-    def __str__(self):
-        return self.name
-
     def __repr__(self):
         return self.name

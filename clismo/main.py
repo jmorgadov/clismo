@@ -1,5 +1,6 @@
 import json
 import logging
+from pprint import pprint
 from random import choice
 
 import typer
@@ -8,13 +9,14 @@ from clismo.compiler import Grammar, LR1Parser, ParserManager
 # from clismo.lang.context import Context
 from clismo.cs_builders import builders
 from clismo.cs_tokenizer import tknz
+from clismo.visitors.eval_visitor import EvalVisitor
+from clismo.visitors.semantic_checker import SemanticChecker
 # from clismo.optimization.client_server_optimizer import ModelOptimizer
 # from clismo.sim.client import Client
 # from clismo.sim.server import Server
 # from clismo.sim.simulation import Simulation
 # from clismo.sim.step import Step
 from clismo.visitors.type_builder import TypeBuilder
-from clismo.visitors.semantic_checker import SemanticChecker
 
 # Set logging level to DEBUG
 # logging.basicConfig(level=logging.DEBUG)
@@ -63,8 +65,8 @@ def run(
     semantic_checker = SemanticChecker(type_builder.types)
     semantic_checker.visit(program)
 
-    # # Evaluate
-    # echo("Program output:", verbose)
+    evaluator = EvalVisitor(semantic_checker.objects)
+    evaluator.visit(program)
 
 
 if __name__ == "__main__":
