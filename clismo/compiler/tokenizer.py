@@ -252,7 +252,7 @@ class Tokenizer:
                 if re_match is not None:
                     lexem = re_match.matched_text
                     tok_lexem = self._token_found_functions[token_type](lexem)
-                    if tok_lexem in self._keywords:
+                    if tok_lexem in self._keywords and token_type != "STRING":
                         token_type = self._keywords[tok_lexem]
                     if tok_lexem is not None:
                         tok = Token(token_type, tok_lexem, line, col)
