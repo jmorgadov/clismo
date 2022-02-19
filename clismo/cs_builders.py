@@ -50,6 +50,7 @@ builders = {
     "stmt -> loop_stmt": lambda l: l,
     "stmt -> return_stmt": lambda r: r,
     "stmt -> flow_stmt": lambda f: f,
+    "stmt -> call": lambda c: c,
     # -------------------------------------------------------------------------
     "decl_stmt -> var NAME = test": lambda v, n, e, t: ast.Assign(n.value, t, True),
     # -------------------------------------------------------------------------

@@ -54,6 +54,7 @@ stmt: decl_stmt
     | loop_stmt
     | return_stmt
     | flow_stmt
+	| call
 
 decl_stmt: 'var' NAME '=' test
 
