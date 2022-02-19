@@ -1,4 +1,4 @@
-# # NumLab Programming Language grammar.
+# Clismo Programming Language grammar.
 
 program:
     | obj_def program

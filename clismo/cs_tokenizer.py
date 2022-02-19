@@ -1,6 +1,6 @@
 from typing import List
 
-from numlab.compiler import Token, Tokenizer
+from clismo.compiler import Token, Tokenizer
 
 tknz = Tokenizer()
 tknz.add_pattern("NEWLINE", r"\n")
