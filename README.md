@@ -1,5 +1,36 @@
 # Clismo
 
+## Índice
+
+- [Objetivos](https://github.com/jmorgadov/clismo#objetivos)
+- [Instalación](https://github.com/jmorgadov/clismo#instalaci%C3%B3n)
+- [Lenguaje](https://github.com/jmorgadov/clismo#lenguaje)
+  - [Características básicas](https://github.com/jmorgadov/clismo#caracter%C3%ADsticas-b%C3%A1sicas)
+    - [Declaración y uso de variables](https://github.com/jmorgadov/clismo#declaraci%C3%B3n-y-uso-de-variables)
+    - [Condicionales](https://github.com/jmorgadov/clismo#condicionales)
+    - [Ciclos](https://github.com/jmorgadov/clismo#cliclos)
+  - [Estructuras principales](https://github.com/jmorgadov/clismo#estructuras-principales)
+  - [Atributos y funciones especiales](https://github.com/jmorgadov/clismo#atributos-y-funciones-especiales)
+    - [Client](https://github.com/jmorgadov/clismo#client)
+    - [Server](https://github.com/jmorgadov/clismo#server)
+    - [Step](https://github.com/jmorgadov/clismo#step)
+    - [Simulation](https://github.com/jmorgadov/clismo#simulation)
+  - [General](https://github.com/jmorgadov/clismo#general)
+  - [Funciones built-in](https://github.com/jmorgadov/clismo#funciones-built-in)
+- [Implementación](https://github.com/jmorgadov/clismo#implementaci%C3%B3n)
+  - [Autómatas](https://github.com/jmorgadov/clismo#aut%C3%B3matas)
+  - [Motor de expresiones regulares](https://github.com/jmorgadov/clismo#motor-de-expresiones-regulares)
+  - [Tokenizador](https://github.com/jmorgadov/clismo#tokenizador)
+  - [Gramáticas](https://github.com/jmorgadov/clismo#gram%C3%A1ticas)
+  - [Árbol de Sintaxis Abstracta (AST)](https://github.com/jmorgadov/clismo#%C3%A1rbol-de-sintaxis-abstracta-ast)
+  - [Parser](https://github.com/jmorgadov/clismo#parser)
+  - [Visitors](https://github.com/jmorgadov/clismo#visitors)
+  - [Ejecución](https://github.com/jmorgadov/clismo#ejecuci%C3%B3n)
+    - [Reconocimiento de las estructuras declaradas](https://github.com/jmorgadov/clismo#reconocimiento-de-las-estructuras-declaradas)
+    - [Chequeo semántico](https://github.com/jmorgadov/clismo#chequeo-sem%C3%A1ntico)
+    - [Evaluación](https://github.com/jmorgadov/clismo#evaluaci%C3%B3n)
+- [Ejemplo](https://github.com/jmorgadov/clismo#ejemplo)
+
 ## Objetivos
 
 El objetivo de este proyecto es crear un lenguaje de programación
@@ -36,7 +67,7 @@ y `simulation`. Las relaciones entre estas estructuras son:
 
 - Los servidores atienden a los clientes.
 - Un `step` contiene una serie de servidores (indica que están en paralelo).
-- Una `simulation` contiene una serie de `step`s (indica que están en secuencia).
+- Un `simulation` contiene una serie de steps (indica que están en secuencia).
 
 Cada una de estas estructuras puede contener atributos y/o funciones especiales
 que definen el comportamiento del sistema que serán analizados en futuras
@@ -556,7 +587,7 @@ Además se realiza un chequeo de tipos de los atributos y cuerpos de las
 funciones. De esta forma se asegura que cada función devuelva un valor de
 tipo correcto.
 
-#### Ejecución
+#### Evaluación
 
 Finalmente, un último vísitor se encarga de recorrer el AST configurando la
 simulación según las estructuras declaradas para luego ejecutar (u optimizar)
@@ -564,5 +595,62 @@ el modelo definido.
 
 ## Ejemplo
 
-En el script ![clismo_example.csm](./clismo_example.csm) se muestra un ejemplo
+En el script [clismo_example.csm](./clismo_example.csm) se muestra un ejemplo
 de un programa.
+
+```text
+client Normal:
+    test_val = 5
+
+    possible(test_val):
+        return randint(2, 10)
+
+server S1:
+    total = 0
+
+    attend_client():
+        var t = 1 * get(current_client, "test_val")
+        set(self, "total", get(self, "total") + t)
+        return t
+
+server S2:
+    total = 0
+
+    attend_client():
+        var t = 3 * get(current_client, "test_val")
+        set(self, "total", get(self, "total") + t)
+        return t
+
+step P1:
+    servers = [S2, S2, S1]
+
+    possible(servers):
+        var s = [S1, S2]
+        var count = len(get(self, "servers"))
+        var new_servers = list("server")
+        loop _ from 0 to count:
+            var r = randint(0, 1)
+            new_servers = append(new_servers, get_at(s, r))
+        return new_servers
+
+simulation Test:
+    mode = "optimize"
+    steps = [P1]
+    client_limit = 50
+
+    max_iter = 20
+    pop_size = 3
+    mut_prob = 0.4
+    new_rand = 10
+
+    arrive(Normal):
+        return 5
+    
+    minimize():
+        var servers = get(get_at(get(self, "steps"), 0), "servers")
+        var count = len(servers)
+        var total = 0
+        loop i from 0 to count:
+            total = total + get(get_at(servers, i), "total")
+        return total
+```
