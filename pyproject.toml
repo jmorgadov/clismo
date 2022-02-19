@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "clismo"
 version = "0.1.0"
-description = "Programing language designed por simulating and optimizing client-server like discret events models"
+description = "Programing language designed for simulating and optimizing client-server like discret events models"
 authors = [
 	"Jorge Morgado Vega <jorge.morgadov@gmail.com>",
 	"Roberto García Rodriguez <robegr42@gmail.com>",
