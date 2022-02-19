@@ -8,21 +8,6 @@ tknz.add_pattern("SPACE", r"( |\t)( |\t)*", lambda l: None)
 
 tknz.add_pattern("COMMENT", r"#.*\n", lambda t: None)
 
-# Augassing
-tknz.add_pattern("+=", r"+=")
-tknz.add_pattern("-=", r"-=")
-tknz.add_pattern("*=", r"\*=")
-tknz.add_pattern("@=", r"@=")
-tknz.add_pattern("/=", r"/=")
-tknz.add_pattern("%=", r"%=")
-tknz.add_pattern("&=", r"&=")
-tknz.add_pattern("|=", r"\|=")
-tknz.add_pattern("^=", r"\^=")
-tknz.add_pattern("<<=", r"<<=")
-tknz.add_pattern(">>=", r">>=")
-tknz.add_pattern("**=", r"\*\*=")
-tknz.add_pattern("//=", r"//=")
-
 # Operators
 tknz.add_pattern("==", r"==")
 tknz.add_pattern(">=", r">=")

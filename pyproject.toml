@@ -7,6 +7,7 @@ authors = [
 	"Roberto García Rodriguez <robegr42@gmail.com>",
 ]
 license = "MIT"
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"

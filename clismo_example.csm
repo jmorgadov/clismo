@@ -38,10 +38,10 @@ simulation Test:
     steps = [P1]
     client_limit = 50
 
-	max_iter = 20
-	pop_size = 3
-	mut_prob = 0.4
-	new_rand = 10
+    max_iter = 20
+    pop_size = 3
+    mut_prob = 0.4
+    new_rand = 10
 
     arrive(Normal):
         return 5
