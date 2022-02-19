@@ -28,7 +28,7 @@ def resolve(func_name):
     return __BUILTINS.get(func_name, None)
 
 
-# Numeric Functions
+#region Numeric Functions
 
 
 @builtin_func("abs", cs_float)
@@ -145,7 +145,10 @@ def tan(x):
     # raise
 
 
-# List Functions
+#endregion
+
+
+#region List Functions
 
 
 @builtin_func("len", cs_int)
@@ -186,3 +189,37 @@ def cs_new_list(type_):
     return Instance(list_type, [])
 
 # endregion
+
+
+#region String Functions
+
+
+@builtin_func("startswith", cs_bool)
+def cs_startswith(x):
+    if x.type.subtype(cs_str):
+        return str.startswith(x.value)
+    #raise
+
+
+@builtin_func("isdigit", cs_bool)
+def cs_isdigit(x):
+    if x.type.subtype(cs_str):
+        return str.isdigit(x.value)
+    #raise
+
+
+builtin_func("lower", cs_str)
+def cs_lower(x):
+    if x.type.subtype(cs_str):
+        return str.lower(x.value)
+    #raise
+
+
+builtin_func("capitalize", cs_str)
+def cs_capitalize(x):
+    if x.type.subtype(cs_str):
+        return str.capitalize(x.value)
+    #raise
+
+
+#endregion
