@@ -1,0 +1,56 @@
+
+client Normal:
+    test_val = 0
+
+    possible(test_val):
+        return randint(2, 10)
+
+server S1:
+    total = 0
+
+    attend_client():
+        var t = 1 * get(current_client, "test_val")
+        set(self, "total", get(self, "total") + t)
+        return t
+
+server S2:
+    total = 0
+
+    attend_client():
+        var t = 3 * get(current_client, "test_val")
+        set(self, "total", get(self, "total") + t)
+        return t
+
+step P1:
+    servers = [S2, S2, S1]
+
+    possible(servers):
+        var s = [S1, S2]
+        var count = len(get(self, "servers"))
+        var new_servers = list("server")
+        loop _ from 0 to count:
+            var r = randint(0, 1)
+            new_servers = append(new_servers, get_at(s, r))
+        return new_servers
+
+simulation Test:
+    mode = "optimize"
+    steps = [P1]
+    client_limit = 50
+
+	max_iter = 20
+	pop_size = 3
+	mut_prob = 0.4
+	new_rand = 10
+
+    arrive(Normal):
+        return 5
+    
+    minimize():
+        var servers = get(get_at(get(self, "steps"), 0), "servers")
+        var count = len(servers)
+        var total = 0
+        loop i from 0 to count:
+            total = total + get(get_at(servers, i), "total")
+        return total
+
