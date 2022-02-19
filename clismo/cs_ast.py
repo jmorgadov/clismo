@@ -127,7 +127,7 @@ class Return(Stmt):
 
 
 class Loop(Stmt):
-    __slots__ = ("target", "body", "start", "end", "step")
+    __slots__ = ("target", "start", "end", "step", "body")
 
     def __init__(
         self,

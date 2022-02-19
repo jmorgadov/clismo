@@ -5,8 +5,9 @@ from clismo.sim.server import Server
 
 
 class Simulation(OptimizableObject):
-    def __init__(self, steps, time_limit=None, client_limit=None):
+    def __init__(self, name, steps, time_limit=None, client_limit=None):
         super().__init__("steps", "client_types")
+        self.name = name
         self.arrival_funcs = []
         self.client_types = []
         self.steps = steps
@@ -38,8 +39,10 @@ class Simulation(OptimizableObject):
         self.clients = 0
         self.events = PriorityQueue()
         for step in self.steps:
+            step.clients_queue = []
             for i, server in enumerate(step.servers):
                 step.servers[i] = server.get()
+
         while True:
             if self.events.empty():
                 self.__run_arrivals()
@@ -66,7 +69,7 @@ class Simulation(OptimizableObject):
                     )
             if step == len(self.steps):
                 self.clients += 1
-                if self.client_limit is not None and self.clients == self.client_limit:
+                if self.client_limit is not None and self.clients >= self.client_limit:
                     break
                 continue
             if step == 0:
