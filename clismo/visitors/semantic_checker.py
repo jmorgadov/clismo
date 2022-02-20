@@ -456,11 +456,9 @@ class SemanticChecker:
                     f"get function must have exactly two arguments, "
                     f"but got {len(node.args)}"
                 )
-            if not isinstance(node.args[1], ast.Constant) and not isinstance(
-                node.args[1].value, str
-            ):
+            if not isinstance(node.args[1], ast.Name):
                 raise TypeError(
-                    "get function second argument must be a constant string"
+                    "get function second argument must be an attribute name"
                 )
             obj_type = self.visit(node.args[0])
             if obj_type == builtin.cs_server:
@@ -476,7 +474,7 @@ class SemanticChecker:
                     f"get function first argument must be a server, "
                     f"simulation, client, or step, but got {obj_type}"
                 )
-            attr_name = node.args[1].value
+            attr_name = node.args[1].name
             for val in self.types[type_].values():
                 if attr_name in val:
                     return val[attr_name]
@@ -489,13 +487,33 @@ class SemanticChecker:
                     f"set function must have exactly three arguments, "
                     f"but got {len(node.args)}"
                 )
-            if not isinstance(node.args[1], ast.Constant) and not isinstance(
-                node.args[1].value, str
-            ):
+            obj_type = self.visit(node.args[0])
+            if obj_type == builtin.cs_server:
+                type_ = "Servers"
+            elif obj_type == builtin.cs_simulation:
+                type_ = "Simulations"
+            elif obj_type == builtin.cs_client:
+                type_ = "Clients"
+            elif obj_type == builtin.cs_step:
+                type_ = "Steps"
+            else:
                 raise TypeError(
-                    "set function second argument must be a "
-                    "constant string (the attribute name)"
+                    f"get function first argument must be a server, "
+                    f"simulation, client, or step, but got {obj_type}"
                 )
+            if not isinstance(node.args[1], ast.Name):
+                raise TypeError(
+                    "set function second argument must be an attribute name"
+                )
+            attr_name = node.args[1].name
+            for val in self.types[type_].values():
+                if attr_name in val:
+                    break
+            else:
+                raise TypeError(
+                    f"{type_} {attr_name} does not exist."
+                )
+            self.visit(node.args[2])
             return builtin.cs_none
         ret_type = builtin.resolve(node.name)
         if ret_type is None:

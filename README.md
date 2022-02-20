@@ -264,8 +264,8 @@ server S1:
     total = 0
 
     attend_client():
-        set(self, "total", get(self, "total") + 1)
-        return nomr() + get(self, "mean")
+        set(self, "total", get(self, total) + 1)
+        return nomr() + get(self, mean)
 ```
 
 > `self` es una referencia a la instancia de la estructura actual
@@ -609,16 +609,16 @@ server S1:
     total = 0
 
     attend_client():
-        var t = 1 * get(current_client, "test_val")
-        set(self, "total", get(self, "total") + t)
+        var t = 1 * get(current_client, test_val)
+        set(self, total, get(self, total) + t)
         return t
 
 server S2:
     total = 0
 
     attend_client():
-        var t = 3 * get(current_client, "test_val")
-        set(self, "total", get(self, "total") + t)
+        var t = 3 * get(current_client, test_val)
+        set(self, total, get(self, total) + t)
         return t
 
 step P1:
@@ -626,7 +626,7 @@ step P1:
 
     possible(servers):
         var s = [S1, S2]
-        var count = len(get(self, "servers"))
+        var count = len(get(self, servers))
         var new_servers = list("server")
         loop _ from 0 to count:
             var r = randint(0, 1)
@@ -634,7 +634,7 @@ step P1:
         return new_servers
 
 simulation Test:
-    mode = "optimize"
+    mode = "run"
     steps = [P1]
     client_limit = 50
 
@@ -647,10 +647,10 @@ simulation Test:
         return 5
     
     minimize():
-        var servers = get(get_at(get(self, "steps"), 0), "servers")
+        var servers = get(get_at(get(self, steps), 0), servers)
         var count = len(servers)
-        var total = 0
+        var val = 0
         loop i from 0 to count:
-            total = total + get(get_at(servers, i), "total")
-        return total
+            val = val + get(get_at(servers, i), total)
+        return val
 ```

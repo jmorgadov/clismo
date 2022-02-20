@@ -288,20 +288,20 @@ class EvalVisitor:
 
     @visitor
     def visit(self, node: ast.Call):
-        args = [self.visit(arg) for arg in node.args]
         if node.name == "get":
-            obj, val = args[0], get_real_value(args[1])
+            obj, attr = self.visit(node.args[0]), node.args[1].name
             if not isinstance(obj, (Client, Server, Step, Simulation)):
                 raise ValueError(
                     "get() can only be called on clients, servers, steps or simulations"
                 )
-            if hasattr(obj, val):
-                return get_clismo_type(getattr(obj, get_real_value(args[1])))
-            if val in obj.attrs:
-                return get_clismo_type(obj.attrs[val])
-            raise Exception(f"{obj.name} has no attribute {val}")
+            if hasattr(obj, attr):
+                return get_clismo_type(getattr(obj, attr))
+            if attr in obj.attrs:
+                return get_clismo_type(obj.attrs[attr])
+            raise Exception(f"{obj.name} has no attribute {attr}")
         if node.name == "set":
-            obj, attr, val = args[0], get_real_value(args[1]), get_real_value(args[2])
+            obj, attr = self.visit(node.args[0]), node.args[1].name
+            val = get_real_value(self.visit(node.args[2]))
             if not isinstance(obj, (Client, Server, Step, Simulation)):
                 raise ValueError(
                     "set() can only be called on clients, servers, steps or simulations"
@@ -311,6 +311,7 @@ class EvalVisitor:
             else:
                 obj.attrs[attr] = val
             return builtin.cs_none(None)
+        args = [self.visit(arg) for arg in node.args]
         return builtin.resolve(node.name)[0](*args)
 
     @visitor
