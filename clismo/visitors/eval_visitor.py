@@ -44,6 +44,8 @@ OPERATOR_FUNC = {
 
 
 def get_real_value(obj):
+    if obj is None:
+        return None
     val = obj.value
     if (
         isinstance(val, list)
@@ -87,6 +89,7 @@ class EvalVisitor:
         for obj in self.objects.values():
             self.objects_by_name.update(obj)
         self.context = {}
+        self.temp_context = {}
         self.flags = {
             "return": None,
             "nextloop": False,
@@ -102,6 +105,8 @@ class EvalVisitor:
             return builtin.cs_int(self.simulation.clients)
         if name == "current_client":
             return self.current_client
+        if name in self.temp_context:
+            return self.temp_context[name]
         if name in self.context:
             return self.context[name]
         if name in self.objects_by_name:
@@ -188,11 +193,15 @@ class EvalVisitor:
 
         def func():
             self.current_obj = obj
+            self.temp_context.clear()
             for stmt in node.body:
                 self.visit(stmt)
             val = self.flags.get("return", None)
             self.flags["return"] = None
             return get_real_value(val)
+
+        if node.name == "init":
+            obj.init_func = func
 
         if node.name == "possible":
             attr_name = node.info[0]
@@ -208,6 +217,7 @@ class EvalVisitor:
             def attend_client(server, client):
                 self.current_obj = server
                 self.current_client = client
+                self.temp_context.clear()
                 for stmt in node.body:
                     self.visit(stmt)
                 val = self.flags.get("return", None)
@@ -225,8 +235,10 @@ class EvalVisitor:
 
     @visitor
     def visit(self, node: ast.Assign):
+        if node.decl and node.name in self.temp_context:
+            raise Exception(f"Variable {node.name} already defined")
         val = self.visit(node.value)
-        self.context[node.name] = val
+        self.temp_context[node.name] = val
 
     @visitor
     def visit(self, node: ast.If):

@@ -77,6 +77,7 @@ class SemanticChecker:
     def __init__(self, types):
         self.types = types
         self.context = {}
+        self.temp_context = {}
         self.attrs = {}
         self.global_vars = {
             "time": builtin.cs_float,
@@ -96,6 +97,8 @@ class SemanticChecker:
     def resolve(self, name):
         if name in self.context:
             return self.context[name]
+        if name in self.temp_context:
+            return self.temp_context[name]
         if name in self.attrs:
             return self.attrs[name]
         if name in self.global_vars:
@@ -113,7 +116,9 @@ class SemanticChecker:
     def define(self, name, type_):
         if name in self.global_vars:
             raise Exception(f"Can not redefine global variable: {name}")
-        self.context[name] = type_
+        if name in self.context or name in self.temp_context:
+            raise Exception(f"Can not redefine variable: {name}")
+        self.temp_context[name] = type_
 
     def _get_list_type(self, node):
         first_type = self.visit(node.elements[0])
@@ -154,11 +159,15 @@ class SemanticChecker:
         else:
             raise Exception(f"Unknown object type: {obj}")
 
+        self.temp_context.clear()
+
         self.global_vars["self"] = obj_type
         self.current_func_name = func_name
         for attr_name, attr_val in attrs.items():
             self.attrs[attr_name] = self._get_type(attr_val)
         if func_name == "on_server_out":
+            self.return_type = builtin.cs_none
+        if func_name == "init":
             self.return_type = builtin.cs_none
         elif func_name == "attend_client":
             self.return_type = builtin.cs_float
@@ -213,6 +222,14 @@ class SemanticChecker:
                             f"unknown server {server_name}."
                         )
                 self._check_function_body("on_server_out", info, body, attrs, "Clients")
+        if "init" in functions:
+            val = functions.pop("init")
+            if len(val) > 1:
+                raise Exception("Too many init functions")
+            for info, body in val.items():
+                if info:
+                    raise Exception("init function must not have any specifications")
+                self._check_function_body("init", [], body, attrs, "Clients")
         if "possible" in functions:
             val = functions.pop("possible")
             for info, body in val.items():
@@ -449,7 +466,6 @@ class SemanticChecker:
 
     @visitor
     def visit(self, node: ast.Call):
-        args_type = [self.visit(arg) for arg in node.args]
         if node.name == "get":
             if len(node.args) != 2:
                 raise TypeError(
@@ -531,6 +547,7 @@ class SemanticChecker:
             ):
                 raise TypeError(f"list function argument must be a constant string")
             return ret_type[1](node.args[0].value)
+        args_type = [self.visit(arg) for arg in node.args]
         return ret_type[1](*args_type)
 
     @visitor
