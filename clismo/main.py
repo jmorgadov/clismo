@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import typer
@@ -54,7 +55,13 @@ def run(
     semantic_checker.visit(program)
 
     evaluator = EvalVisitor(semantic_checker.objects)
-    evaluator.visit(program)
+    best_sol, opt = evaluator.visit(program)
+
+    if opt is not None:
+        path = Path(input_path)
+        new_path = path.parent / f"opt_{os.path.split(input_path)[1]}"
+        opt.save_optimization(input_path, str(new_path), best_sol)
+        print(f"\nOptimized code saved on {new_path}")
 
 
 if __name__ == "__main__":

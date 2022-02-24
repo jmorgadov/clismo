@@ -1,6 +1,6 @@
 
 client Normal:
-    test_val = 5
+    test_val = 10
 
     possible(test_val):
         return randint(2, 10)
@@ -28,13 +28,14 @@ step P1:
         var s = [S1, S2]
         var count = len(get(self, servers))
         var new_servers = list("server")
+		var r = 0
         loop _ from 0 to count:
-            var r = randint(0, 1)
+            r = randint(0, 1)
             new_servers = append(new_servers, get_at(s, r))
         return new_servers
 
 simulation Test:
-    mode = "run"
+    mode = "optimize"
     steps = [P1]
     client_limit = 50
 

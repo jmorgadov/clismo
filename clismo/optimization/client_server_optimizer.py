@@ -1,4 +1,5 @@
 import random
+import re
 from contextlib import redirect_stdout
 from time import time
 
@@ -71,3 +72,32 @@ class ModelOptimizer(GeneticAlg):
         obj, attr_name, func = self.changes[idx]
         sol[idx] = (obj, attr_name, func())
         return sol
+
+    def save_optimization(self, original_code_file: str, filename, best_sol):
+        """
+        Save the optimization to a file
+        """
+        new_code = []
+        with open(original_code_file, "r", encoding="utf-8") as orig_f:
+            original_code = orig_f.read()
+        original_code.replace("\t", "    ")
+        original_code = original_code.split("\n")
+        changes = {}
+        for line in original_code:
+            if line and line[0] != " " and line[-1] == ":":
+                inside = line.split()[-1][:-1]
+                changes = {
+                    attr: val for obj, attr, val in best_sol if obj.name == inside
+                }
+            if len(line) > 4 and line[4] != " " and "=" in line:
+                attr_name = line.split()[0]
+                if attr_name in changes:
+                    new_line = f"    {attr_name} = {repr(changes[attr_name])}\n"
+                    new_code.append(new_line)
+                    continue
+                if attr_name == "mode":
+                    continue
+            new_code.append(line + "\n")
+        with open(filename, "w+", encoding="utf-8") as new_f:
+            new_f.writelines(new_code)
+

@@ -140,7 +140,8 @@ class EvalVisitor:
                     best_selection_count=best_sel,
                     generate_new_randoms=new_rand,
                 )
-                opt.run()
+                return opt.run()[0], opt
+        return None, None
 
     @visitor
     def visit(self, node: ast.ClientDef):
