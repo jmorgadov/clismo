@@ -603,17 +603,15 @@ grande. Cada barco tiene una carga y velocidad variable (en dependencia de
 su tamaño). Al sitema llegan más barcos pequeños que medianos y más medianos
 que grandes.
 
-En el puerto contiene una serie de muelles (servidores) en los que los barcos
-descargan. Cada muelle tiene una cantidad de personan que trabajan en el mismo.
-En dependencia de la cantidad de personas que trabajan en el muelle, y la cantidad
-de carga que trae el barco, se determina el tiempo que tarda en descargar el
-barco.
+El puerto contiene una serie de muelles (servidores) en los que los barcos
+descargan. En dependencia de la cantidad de carga que trae el barco, se
+determina el tiempo que tarda en descargar la misma.
 
 En la configuración actual se definen dos muelles. Al ejecutar la simulación
 varias veces se obtuvo que la cantidad de barcos atendidos fue de alrededor de
 220 a 260 barcos.
 
-Se quiere saber cual es la mínima cantidad de muelles necesarios para
+Se quiere saber cuál es la mínima cantidad de muelles necesarios para
 satisfacer la demanda de barcos. Tampoco se quiere tener muelles de más, es por
 ello que al optimizar se le asigna un costo a cada muelle. Para la optimización
 se establece que la cantidad de muelles posibles es de 1 a 6.
