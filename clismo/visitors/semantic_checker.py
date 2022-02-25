@@ -167,7 +167,7 @@ class SemanticChecker:
             self.attrs[attr_name] = self._get_type(attr_val)
         if func_name == "on_server_out":
             self.return_type = builtin.cs_none
-        if func_name == "init":
+        elif func_name == "init":
             self.return_type = builtin.cs_none
         elif func_name == "attend_client":
             self.return_type = builtin.cs_float
@@ -178,7 +178,7 @@ class SemanticChecker:
         elif func_name == "possible":
             self.return_type = self.resolve(info[0])
         else:
-            assert False, "Unreachable"
+            assert False, f"Unreachable, {func_name}"
         for stmt in body:
             self.visit(stmt)
 

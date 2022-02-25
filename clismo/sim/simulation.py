@@ -13,6 +13,7 @@ class Simulation(OptimizableObject):
         self.steps = steps
         self.time = 0
         self.clients = 0
+        self.added_clients = 0
         self.events = PriorityQueue()
         self.time_limit = time_limit
         self.client_limit = client_limit
@@ -23,13 +24,16 @@ class Simulation(OptimizableObject):
         self.arrival_funcs.append((arrival_func, client))
         self.client_types.append(client)
 
-    def __run_arrivals(self):
+    def __run_arrivals(self, type_ = None):
         for arrival_func, client_type in self.arrival_funcs:
+            if type_ is not None and client_type.name != type_:
+                continue
             delta_time = arrival_func()
             client = client_type.get()
             self.events.put(
                 (self.time + delta_time, delta_time, client, Server.ghost(), 0)
             )
+            self.added_clients += 1
 
     def run(self, verbose=False):
         if self.time_limit is None and self.client_limit is None:
@@ -74,7 +78,7 @@ class Simulation(OptimizableObject):
                     break
                 continue
             if step == 0:
-                self.__run_arrivals()
+                self.__run_arrivals(client.name)
             event_time, server = self.steps[step].receive_client(client)
             if event_time is not None:
                 self.events.put(

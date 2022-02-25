@@ -13,7 +13,7 @@ class OptimizableObject:
             if isinstance(child, OptimizableObject):
                 ans += child.get_possible_changes()
             elif isinstance(child, list):
-                for item in child:
+                for item in set(child):
                     if isinstance(item, OptimizableObject):
                         ans += item.get_possible_changes()
         return ans

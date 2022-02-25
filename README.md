@@ -595,62 +595,119 @@ el modelo definido.
 
 ## Ejemplo
 
-En el script [clismo_example.csm](./clismo_example.csm) se muestra un ejemplo
-de un programa.
+El siguiente [ejemplo](./examples/port_example.csm) simula el comportamiento
+de un puerto.
+
+En este ejemplo se definen tres tipos de barcos (clientes): pequeño, mediano y
+grande. Cada barco tiene una carga y velocidad variable (en dependencia de
+su tamaño). Al sitema llegan más barcos pequeños que medianos y más medianos
+que grandes.
+
+En el puerto contiene una serie de muelles (servidores) en los que los barcos
+descargan. Cada muelle tiene una cantidad de personan que trabajan en el mismo.
+En dependencia de la cantidad de personas que trabajan en el muelle, y la cantidad
+de carga que trae el barco, se determina el tiempo que tarda en descargar el
+barco.
+
+En la configuración actual se definen dos muelles. Al ejecutar la simulación
+varias veces se obtuvo que la cantidad de barcos atendidos fue de alrededor de
+220 a 260 barcos.
+
+Se quiere saber cual es la mínima cantidad de muelles necesarios para
+satisfacer la demanda de barcos. Tampoco se quiere tener muelles de más, es por
+ello que al optimizar se le asigna un costo a cada muelle. Para la optimización
+se establece que la cantidad de muelles posibles es de 1 a 6.
+
+Al optimizar:
 
 ```text
-client Normal:
-    test_val = 5
+Generating population of 30
+Evaluating population
+Iteration 1 of 5
+Best solution: ([(Docks, 'servers', [Dock, Dock, Dock, Dock])], -314)
+Iteration 2 of 5
+Best solution: ([(Docks, 'servers', [Dock, Dock, Dock, Dock])], -314)
+Iteration 3 of 5
+Best solution: ([(Docks, 'servers', [Dock, Dock, Dock, Dock])], -315)
+Iteration 4 of 5
+Best solution: ([(Docks, 'servers', [Dock, Dock, Dock, Dock])], -316)
+Iteration 5 of 5
+Best solution: ([(Docks, 'servers', [Dock, Dock, Dock, Dock])], -316)
 
-    possible(test_val):
-        return randint(2, 10)
+Optimized code saved on examples/opt_port_example.csm
+```
 
-server S1:
-    total = 0
+Al ejecutar el [código obtenido de la
+optimización](./examples/opt_port_example.csm) se obtuvo que la cantidad de
+barcos atendidos fue de alrededor de 410 a 430 barcos, con una configuración de
+4 muelles.
+
+Código del ejemplo:
+
+```text
+client SmallShip:
+    speed = 30
+    load = 3
+
+    init():
+        set(self, speed, rand() * 10 + 20)
+        set(self, load, randint(5, 10))
+
+client MediumShip:
+    speed = 20
+    load = 20
+
+    init():
+        set(self, speed, rand() * 10 + 10)
+        set(self, load, randint(10, 50))
+
+client BigShip:
+    speed = 10
+    load = 100
+
+    init():
+        set(self, speed, rand() * 10 + 5)
+        set(self, load, randint(50, 100))
+
+server Dock:
 
     attend_client():
-        var t = 1 * get(current_client, test_val)
-        set(self, total, get(self, total) + t)
-        return t
-
-server S2:
-    total = 0
-
-    attend_client():
-        var t = 3 * get(current_client, test_val)
-        set(self, total, get(self, total) + t)
-        return t
-
-step P1:
-    servers = [S2, S2, S1]
+        var t = get(current_client, load) * 3
+		return t
+	
+step Docks:
+    servers = [Dock, Dock]
 
     possible(servers):
-        var s = [S1, S2]
-        var count = len(get(self, servers))
-        var new_servers = list("server")
-        loop _ from 0 to count:
-            var r = randint(0, 1)
-            new_servers = append(new_servers, get_at(s, r))
-        return new_servers
+        var count = randint(1, 6)
+        var docks = list("server")
+        loop i from 0 to count:
+            docks = append(docks, Dock)
+        return docks
 
-simulation Test:
-    mode = "run"
-    steps = [P1]
-    client_limit = 50
+simulation Port:
+    mode = "optimize"
+    steps = [Docks]
+    time_limit = 8000
+    logs = True
 
-    max_iter = 20
-    pop_size = 3
+    max_iter = 5
+    pop_size = 30
     mut_prob = 0.4
     new_rand = 10
 
-    arrive(Normal):
-        return 5
+    arrive(SmallShip):
+        return randint(20, 40)
+    
+    arrive(MediumShip):
+        return randint(50, 80)
+    
+    arrive(BigShip):
+        return randint(150, 200)
     
     minimize():
-        var servers = get(get_at(get(self, steps), 0), servers)
-        var count = len(servers)
-        var val = 0
-        loop i from 0 to count:
-            val = val + get(get_at(servers, i), total)
-        return val
+        var entry = get_at(get(self, steps), 0)
+        var docks = get(entry, servers)
+        var count = len(docks)
+        return -clients + count * 30
 ```

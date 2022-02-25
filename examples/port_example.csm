@@ -1,0 +1,68 @@
+
+
+client SmallShip:
+    speed = 30
+    load = 3
+
+    init():
+        set(self, speed, rand() * 10 + 20)
+        set(self, load, randint(5, 10))
+
+client MediumShip:
+    speed = 20
+    load = 20
+
+    init():
+        set(self, speed, rand() * 10 + 10)
+        set(self, load, randint(10, 50))
+
+client BigShip:
+    speed = 10
+    load = 100
+
+    init():
+        set(self, speed, rand() * 10 + 5)
+        set(self, load, randint(50, 100))
+
+server Dock:
+
+    attend_client():
+        var t = get(current_client, load) * 3
+		return t
+	
+step Docks:
+    servers = [Dock, Dock]
+
+    possible(servers):
+        var count = randint(1, 6)
+        var docks = list("server")
+        loop i from 0 to count:
+            docks = append(docks, Dock)
+        return docks
+
+simulation Port:
+    mode = "optimize"
+    steps = [Docks]
+    time_limit = 8000
+    logs = True
+
+    max_iter = 5
+    pop_size = 30
+    mut_prob = 0.4
+    new_rand = 10
+
+    arrive(SmallShip):
+        return randint(20, 40)
+    
+    arrive(MediumShip):
+        return randint(50, 80)
+    
+    arrive(BigShip):
+        return randint(150, 200)
+    
+    minimize():
+        var entry = get_at(get(self, steps), 0)
+        var docks = get(entry, servers)
+        var count = len(docks)
+        return -clients + count * 30
+    
